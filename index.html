@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GymRats - Control de Suspensión Dinámica</title>
+  
+  <!-- Chart.js para la gráfica -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+
+  <!-- Firebase SDKs (v9/v10 Compat Mode para integración sencilla) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --warning: #f59e0b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text); padding: 16px; display: flex; justify-content: center; }
+    .container { width: 100%; max-width: 1000px; display: flex; flex-direction: column; gap: 20px; }
+    
+    header { 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      gap: 16px; 
+      padding: 10px 0; 
+      border-bottom: 1px solid var(--border);
+    }
+    .brand-title h1 { color: var(--accent); font-size: 2rem; font-weight: 800; letter-spacing: 1px; }
+    .brand-title p { color: var(--text-muted); font-size: 0.9rem; }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid var(--border);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .card h2 { font-size: 1.1rem; color: var(--text); display: flex; align-items: center; gap: 8px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+    form { display: flex; flex-direction: column; gap: 12px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .time-inputs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+    label { font-size: 0.85rem; color: var(--text-muted); }
+    input, select {
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+
+    button {
+      background: var(--accent);
+      color: #0f172a;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+    }
+    button:hover { background: var(--accent-hover); }
+
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { background: #16a34a; }
+
+    .athletes-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+    .athlete-row {
+      background: #090d16;
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .athlete-actions { display: flex; gap: 6px; }
+
+    .chart-wrapper { position: relative; height: 320px; width: 100%; }
+
+    /* TABLA MATRIZ */
+    .table-responsive { 
+      overflow-x: auto; 
+      margin-top: 10px; 
+      max-width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.85rem; text-align: center; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); white-space: nowrap; }
+    
+    .super-header th {
+      background-color: #1e3a8a;
+      color: #ffffff;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    
+    .sub-header th {
+      background-color: #0f172a;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .sticky-col {
+      position: sticky;
+      left: 0;
+      background-color: #1e293b;
+      z-index: 5;
+      text-align: left;
+      font-weight: bold;
+      border-right: 2px solid var(--accent);
+    }
+    th.sticky-col { z-index: 10; }
+
+    tbody tr:hover { background-color: rgba(255, 255, 255, 0.03); }
+    tbody tr:hover td.sticky-col { background-color: #26334d; }
+
+    .footer-row td {
+      background-color: #0f172a;
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    .time-tag {
+      display: inline-block;
+      background: #090d16;
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      font-family: monospace;
+    }
+
+    .btn-icon { background: none; border: none; cursor: pointer; padding: 2px 4px; font-size: 0.8rem; }
+    .btn-delete { color: var(--danger); }
+    .btn-edit { color: var(--accent); }
+
+    @media (max-width: 768px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      header { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="brand-title">
+      <h1>GymRats</h1>
+      <p>Control de Suspensión Dinámica (En la Nube ☁️)</p>
+    </div>
+  </header>
+
+  <div class="grid-2">
+    <!-- Módulo 1: Atletas -->
+    <div class="card">
+      <h2>👤 Atletas Registrados</h2>
+      <form id="user-form">
+        <div class="form-group">
+          <label for="new-user">Registrar Nuevo Atleta</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="new-user" placeholder="Nombre del atleta" style="flex:1" required>
+            <button type="submit">Agregar</button>
+          </div>
+        </div>
+      </form>
+
+      <label style="margin-top: 15px; display: block;">Lista de Atletas:</label>
+      <div class="athletes-list" id="athletes-container"></div>
+    </div>
+
+    <!-- Módulo 2: Tiempos -->
+    <div class="card">
+      <h2>⏱️ Registrar Tiempo Diario</h2>
+      <form id="time-form">
+        <div class="form-group">
+          <label for="select-user">Atleta Registrado</label>
+          <select id="select-user" required>
+            <option value="">-- Selecciona Atleta --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="date-input">Fecha</label>
+          <input type="date" id="date-input" required>
+        </div>
+
+        <div class="form-group">
+          <label>Tiempo (Min : Seg : Milésimas)</label>
+          <div class="time-inputs">
+            <input type="number" id="minutes" placeholder="Min" min="0" value="0" required>
+            <input type="number" id="seconds" placeholder="Seg" min="0" max="59" value="0" required>
+            <input type="number" id="millis" placeholder="ms" min="0" max="999" value="0" required>
+          </div>
+        </div>
+
+        <button type="submit">Guardar Marca en Nube</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Módulo 3: Gráfica -->
+  <div class="card">
+    <h2>📈 Gráfica de Avances</h2>
+    <div class="chart-wrapper">
+      <canvas id="progressChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Módulo 4: Tabla Matriz de Registro -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2>📊 Historial de Registro de Tiempos por Usuario</h2>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+          Sincronizado en tiempo real para todos los usuarios.
+        </p>
+      </div>
+      <button class="btn-success" onclick="exportToCSV()">📊 Exportar a Excel (CSV)</button>
+    </div>
+
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr class="super-header">
+            <th class="sticky-col">INFORMACIÓN DEL USUARIO</th>
+            <th id="history-super-header" colspan="1">HISTORIAL DE FECHAS DE INGRESO / REGISTRO DE TIEMPOS (SEGUNDOS)</th>
+          </tr>
+          <tr class="sub-header" id="table-headers">
+            <th class="sticky-col">Nombre del Atleta</th>
+          </tr>
+        </thead>
+        <tbody id="records-table-body"></tbody>
+        <tfoot>
+          <tr class="footer-row" id="table-footer"></tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 1. CONFIGURACIÓN DE FIREBASE (Reemplaza con tus datos de la consola de Firebase)
+  const firebaseConfig = {
+    apiKey: "TU_API_KEY",
+    authDomain: "TU_PROYECTO.firebaseapp.com",
+    projectId: "TU_PROYECTO_ID",
+    storageBucket: "TU_PROYECTO.appspot.com",
+    messagingSenderId: "TU_SENDER_ID",
+    appId: "TU_APP_ID"
+  };
+
+  // Inicializar Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const COLORS = ['#38bdf8', '#f43f5e', '#a855f7', '#4ade80', '#fbbf24', '#fb923c', '#f472b6', '#2dd4bf'];
+
+  let users = [];
+  let records = [];
+
+  const userForm = document.getElementById('user-form');
+  const newUserInput = document.getElementById('new-user');
+  const athletesContainer = document.getElementById('athletes-container');
+  const selectUser = document.getElementById('select-user');
+  const timeForm = document.getElementById('time-form');
+  const dateInput = document.getElementById('date-input');
+
+  dateInput.value = new Date().toISOString().split('T')[0];
+
+  // 2. ESCUCHAR CAMBIOS EN TIEMPO REAL DESDE LA NUBE
+  db.collection("users").onSnapshot(snapshot => {
+    users = snapshot.docs.map(doc => doc.data().name).sort();
+    renderUsers();
+    updateUI();
+  });
+
+  db.collection("records").onSnapshot(snapshot => {
+    records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    updateUI();
+  });
+
+  function renderUsers() {
+    athletesContainer.innerHTML = '';
+    selectUser.innerHTML = '<option value="">-- Selecciona Atleta --</option>';
+
+    users.forEach(u => {
+      const row = document.createElement('div');
+      row.className = 'athlete-row';
+      row.innerHTML = `
+        <span>👤 <strong>${u}</strong></span>
+        <div class="athlete-actions">
+          <button class="btn-icon btn-delete" onclick="removeUser('${u}')" title="Eliminar usuario">🗑️</button>
+        </div>
+      `;
+      athletesContainer.appendChild(row);
+
+      const opt = document.createElement('option');
+      opt.value = u;
+      opt.textContent = u;
+      selectUser.appendChild(opt);
+    });
+  }
+
+  // Guardar nuevo usuario en la nube
+  userForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = newUserInput.value.trim();
+    if (name && !users.includes(name)) {
+      db.collection("users").doc(name).set({ name: name });
+      newUserInput.value = '';
+    }
+  });
+
+  window.removeUser = function(userName) {
+    if (confirm(`¿Eliminar a ${userName} y todas sus marcas?`)) {
+      db.collection("users").doc(userName).delete();
+      // Eliminar registros asociados
+      records.filter(r => r.user === userName).forEach(r => {
+        db.collection("records").doc(r.id).delete();
+      });
+    }
+  };
+
+  // Guardar tiempo en la nube
+  timeForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const user = selectUser.value;
+    const date = dateInput.value;
+    const min = parseInt(document.getElementById('minutes').value) || 0;
+    const sec = parseInt(document.getElementById('seconds').value) || 0;
+    const ms = parseInt(document.getElementById('millis').value) || 0;
+
+    if (!user) return alert('Selecciona un atleta.');
+
+    const totalSec = (min * 60) + sec + (ms / 1000);
+    if (totalSec <= 0) return alert('Ingresa un tiempo válido.');
+
+    const recordId = `${user}_${date}`;
+    db.collection("records").doc(recordId).set({
+      user, date, min, sec, ms, totalSec
+    });
+
+    document.getElementById('minutes').value = '0';
+    document.getElementById('seconds').value = '0';
+    document.getElementById('millis').value = '0';
+  });
+
+  window.deleteRecord = function(id) {
+    if (confirm("¿Seguro que deseas eliminar este registro?")) {
+      db.collection("records").doc(id).delete();
+    }
+  };
+
+  // Configuración de Gráfica
+  const ctx = document.getElementById('progressChart').getContext('2d');
+  let chart = new Chart(ctx, {
+    type: 'line',
+    data: { datasets: [] },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          type: 'time',
+          time: { unit: 'day', displayFormats: { day: 'dd/MM' } },
+          grid: { color: '#334155' },
+          ticks: { color: '#94a3b8' }
+        },
+        y: {
+          title: { display: true, text: 'Segundos Totales', color: '#94a3b8' },
+          grid: { color: '#334155' },
+          ticks: { color: '#94a3b8' }
+        }
+      },
+      plugins: { legend: { labels: { color: '#f8fafc' } } }
+    }
+  });
+
+  function updateUI() {
+    const uniqueDates = [...new Set(records.map(r => r.date))].sort((a, b) => new Date(a) - new Date(b));
+
+    const superHeader = document.getElementById('history-super-header');
+    const tableHeaders = document.getElementById('table-headers');
+    const tableBody = document.getElementById('records-table-body');
+    const tableFooter = document.getElementById('table-footer');
+
+    superHeader.colSpan = uniqueDates.length > 0 ? uniqueDates.length : 1;
+
+    tableHeaders.innerHTML = '<th class="sticky-col">Nombre del Atleta</th>';
+    if (uniqueDates.length === 0) {
+      tableHeaders.innerHTML += '<th>Sin Registros</th>';
+    } else {
+      uniqueDates.forEach(d => {
+        const parts = d.split('-');
+        tableHeaders.innerHTML += `<th>${parts[2]}/${parts[1]}/${parts[0]}</th>`;
+      });
+    }
+
+    tableBody.innerHTML = '';
+    const dateTotals = {};
+    const dateCounts = {};
+    uniqueDates.forEach(d => { dateTotals[d] = 0; dateCounts[d] = 0; });
+
+    users.forEach(u => {
+      const tr = document.createElement('tr');
+      let rowHTML = `<td class="sticky-col">👤 ${u}</td>`;
+
+      if (uniqueDates.length === 0) {
+        rowHTML += '<td style="color: var(--text-muted);">-</td>';
+      } else {
+        uniqueDates.forEach(d => {
+          const userRec = records.find(r => r.user === u && r.date === d);
+          if (userRec) {
+            dateTotals[d] += userRec.totalSec;
+            dateCounts[d] += 1;
+            rowHTML += `
+              <td>
+                <div class="time-tag">
+                  ${userRec.totalSec.toFixed(1)}s
+                  <button class="btn-icon btn-delete" onclick="deleteRecord('${userRec.id}')" title="Eliminar">🗑️</button>
+                </div>
+              </td>`;
+          } else {
+            rowHTML += `<td style="color: var(--text-muted);">-</td>`;
+          }
+        });
+      }
+
+      tr.innerHTML = rowHTML;
+      tableBody.appendChild(tr);
+    });
+
+    let footerHTML = '<td class="sticky-col">Promedio / Total General</td>';
+    if (uniqueDates.length === 0) {
+      footerHTML += '<td>-</td>';
+    } else {
+      uniqueDates.forEach(d => {
+        if (dateCounts[d] > 0) {
+          const avg = dateTotals[d] / dateCounts[d];
+          footerHTML += `<td>${avg.toFixed(1)}s</td>`;
+        } else {
+          footerHTML += '<td>-</td>';
+        }
+      });
+    }
+    tableFooter.innerHTML = footerHTML;
+
+    // Actualizar Gráfica
+    const datasets = users.map((u, i) => {
+      const userRecords = records.filter(r => r.user === u).sort((a, b) => new Date(a.date) - new Date(b.date));
+      return {
+        label: u,
+        data: userRecords.map(r => ({ x: r.date, y: r.totalSec })),
+        borderColor: COLORS[i % COLORS.length],
+        backgroundColor: COLORS[i % COLORS.length],
+        borderWidth: 2,
+        tension: 0.2,
+        pointRadius: 4
+      };
+    });
+
+    chart.data.datasets = datasets;
+    chart.update();
+  }
+
+  // Exportar a CSV
+  window.exportToCSV = function() {
+    if (records.length === 0) return alert("No hay registros para exportar.");
+
+    const uniqueDates = [...new Set(records.map(r => r.date))].sort((a, b) => new Date(a) - new Date(b));
+    let csvContent = "data:text/csv;charset=utf-8,";
+
+    csvContent += `"INFORMACIÓN DEL USUARIO",` + uniqueDates.map(() => `"HISTORIAL DE FECHAS DE INGRESO / REGISTRO DE TIEMPOS (SEGUNDOS)"`).join(",") + "\n";
+
+    const formattedDates = uniqueDates.map(d => {
+      const parts = d.split('-');
+      return `"${parts[2]}/${parts[1]}/${parts[0]}"`;
+    });
+    csvContent += `"Nombre del Atleta",` + formattedDates.join(",") + "\n";
+
+    const dateTotals = {};
+    const dateCounts = {};
+    uniqueDates.forEach(d => { dateTotals[d] = 0; dateCounts[d] = 0; });
+
+    users.forEach(u => {
+      let row = `"${u}"`;
+      uniqueDates.forEach(d => {
+        const userRec = records.find(r => r.user === u && r.date === d);
+        if (userRec) {
+          row += `,${userRec.totalSec.toFixed(1)}`;
+          dateTotals[d] += userRec.totalSec;
+          dateCounts[d] += 1;
+        } else {
+          row += `,""`;
+        }
+      });
+      csvContent += row + "\n";
+    });
+
+    let footerRow = `"Promedio / Total General"`;
+    uniqueDates.forEach(d => {
+      if (dateCounts[d] > 0) {
+        footerRow += `,${(dateTotals[d] / dateCounts[d]).toFixed(1)}`;
+      } else {
+        footerRow += `,""`;
+      }
+    });
+    csvContent += footerRow + "\n";
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `GymRats_Historial_Matriz_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+</script>
+
+</body>
+</html>
