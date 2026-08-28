@@ -4,6 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GymRats - Control de Suspensión Dinámica</title>
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyDalZe9eLeLVqJjwOfcS3oDGdwgpOwbGdI",
+  authDomain: "gymrats-db.firebaseapp.com",
+  projectId: "gymrats-db",
+  storageBucket: "gymrats-db.firebasestorage.app",
+  messagingSenderId: "636900407933",
+  appId: "1:636900407933:web:9f8d7cfac058ba73f94f14"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
   
   <!-- Chart.js para la gráfica -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
