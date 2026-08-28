@@ -4,31 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GymRats - Control de Suspensión Dinámica</title>
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyDalZe9eLeLVqJjwOfcS3oDGdwgpOwbGdI",
-  authDomain: "gymrats-db.firebaseapp.com",
-  projectId: "gymrats-db",
-  storageBucket: "gymrats-db.firebasestorage.app",
-  messagingSenderId: "636900407933",
-  appId: "1:636900407933:web:9f8d7cfac058ba73f94f14"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
   
   <!-- Chart.js para la gráfica -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-
-  <!-- Firebase SDKs (v9/v10 Compat Mode para integración sencilla) -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
   <style>
     :root {
@@ -288,20 +267,31 @@ const app = initializeApp(firebaseConfig);
   </div>
 </div>
 
-<script>
-  // 1. CONFIGURACIÓN DE FIREBASE (Reemplaza con tus datos de la consola de Firebase)
+<!-- SDKs e Inicialización de Firebase en Modo Módulo -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { 
+    getFirestore, 
+    collection, 
+    doc, 
+    setDoc, 
+    deleteDoc, 
+    onSnapshot 
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  // Configuración de tu aplicación Firebase
   const firebaseConfig = {
-    apiKey: "TU_API_KEY",
-    authDomain: "TU_PROYECTO.firebaseapp.com",
-    projectId: "TU_PROYECTO_ID",
-    storageBucket: "TU_PROYECTO.appspot.com",
-    messagingSenderId: "TU_SENDER_ID",
-    appId: "TU_APP_ID"
+    apiKey: "AIzaSyDalZe9eLeLVqJjwOfcS3oDGdwgpOwbGdI",
+    authDomain: "gymrats-db.firebaseapp.com",
+    projectId: "gymrats-db",
+    storageBucket: "gymrats-db.firebasestorage.app",
+    messagingSenderId: "636900407933",
+    appId: "1:636900407933:web:9f8d7cfac058ba73f94f14"
   };
 
-  // Inicializar Firebase
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+  // Inicializar Firebase y Firestore
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
   const COLORS = ['#38bdf8', '#f43f5e', '#a855f7', '#4ade80', '#fbbf24', '#fb923c', '#f472b6', '#2dd4bf'];
 
@@ -317,14 +307,15 @@ const app = initializeApp(firebaseConfig);
 
   dateInput.value = new Date().toISOString().split('T')[0];
 
-  // 2. ESCUCHAR CAMBIOS EN TIEMPO REAL DESDE LA NUBE
-  db.collection("users").onSnapshot(snapshot => {
+  // Escuchar Atletas en Tiempo Real
+  onSnapshot(collection(db, "users"), (snapshot) => {
     users = snapshot.docs.map(doc => doc.data().name).sort();
     renderUsers();
     updateUI();
   });
 
-  db.collection("records").onSnapshot(snapshot => {
+  // Escuchar Registros de Tiempos en Tiempo Real
+  onSnapshot(collection(db, "records"), (snapshot) => {
     records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     updateUI();
   });
@@ -339,7 +330,7 @@ const app = initializeApp(firebaseConfig);
       row.innerHTML = `
         <span>👤 <strong>${u}</strong></span>
         <div class="athlete-actions">
-          <button class="btn-icon btn-delete" onclick="removeUser('${u}')" title="Eliminar usuario">🗑️</button>
+          <button class="btn-icon btn-delete" onclick="window.removeUser('${u}')" title="Eliminar usuario">🗑️</button>
         </div>
       `;
       athletesContainer.appendChild(row);
@@ -351,28 +342,29 @@ const app = initializeApp(firebaseConfig);
     });
   }
 
-  // Guardar nuevo usuario en la nube
-  userForm.addEventListener('submit', (e) => {
+  // Guardar atleta en la Nube
+  userForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = newUserInput.value.trim();
     if (name && !users.includes(name)) {
-      db.collection("users").doc(name).set({ name: name });
+      await setDoc(doc(db, "users", name), { name: name });
       newUserInput.value = '';
     }
   });
 
-  window.removeUser = function(userName) {
+  // Eliminar atleta
+  window.removeUser = async function(userName) {
     if (confirm(`¿Eliminar a ${userName} y todas sus marcas?`)) {
-      db.collection("users").doc(userName).delete();
-      // Eliminar registros asociados
-      records.filter(r => r.user === userName).forEach(r => {
-        db.collection("records").doc(r.id).delete();
-      });
+      await deleteDoc(doc(db, "users", userName));
+      const userRecords = records.filter(r => r.user === userName);
+      for (let r of userRecords) {
+        await deleteDoc(doc(db, "records", r.id));
+      }
     }
   };
 
-  // Guardar tiempo en la nube
-  timeForm.addEventListener('submit', (e) => {
+  // Guardar tiempo en la Nube
+  timeForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const user = selectUser.value;
     const date = dateInput.value;
@@ -386,7 +378,7 @@ const app = initializeApp(firebaseConfig);
     if (totalSec <= 0) return alert('Ingresa un tiempo válido.');
 
     const recordId = `${user}_${date}`;
-    db.collection("records").doc(recordId).set({
+    await setDoc(doc(db, "records", recordId), {
       user, date, min, sec, ms, totalSec
     });
 
@@ -395,13 +387,13 @@ const app = initializeApp(firebaseConfig);
     document.getElementById('millis').value = '0';
   });
 
-  window.deleteRecord = function(id) {
+  window.deleteRecord = async function(id) {
     if (confirm("¿Seguro que deseas eliminar este registro?")) {
-      db.collection("records").doc(id).delete();
+      await deleteDoc(doc(db, "records", id));
     }
   };
 
-  // Configuración de Gráfica
+  // Configuración de Gráfica Chart.js
   const ctx = document.getElementById('progressChart').getContext('2d');
   let chart = new Chart(ctx, {
     type: 'line',
@@ -467,7 +459,7 @@ const app = initializeApp(firebaseConfig);
               <td>
                 <div class="time-tag">
                   ${userRec.totalSec.toFixed(1)}s
-                  <button class="btn-icon btn-delete" onclick="deleteRecord('${userRec.id}')" title="Eliminar">🗑️</button>
+                  <button class="btn-icon btn-delete" onclick="window.deleteRecord('${userRec.id}')" title="Eliminar">🗑️</button>
                 </div>
               </td>`;
           } else {
@@ -495,7 +487,7 @@ const app = initializeApp(firebaseConfig);
     }
     tableFooter.innerHTML = footerHTML;
 
-    // Actualizar Gráfica
+    // Actualizar datos de la Gráfica
     const datasets = users.map((u, i) => {
       const userRecords = records.filter(r => r.user === u).sort((a, b) => new Date(a.date) - new Date(b.date));
       return {
@@ -513,7 +505,7 @@ const app = initializeApp(firebaseConfig);
     chart.update();
   }
 
-  // Exportar a CSV
+  // Exportar matriz a Excel / CSV
   window.exportToCSV = function() {
     if (records.length === 0) return alert("No hay registros para exportar.");
 
