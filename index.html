@@ -3,561 +3,656 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GymRats - Control de Suspensión Dinámica</title>
+  <title>GymRats - Tracker de Entrenamiento</title>
   
-  <!-- Chart.js para la gráfica -->
+  <!-- Chart.js y Adapter para fechas -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 
   <style>
     :root {
-      --bg-color: #0f172a;
+      --bg-dark: #0f172a;
       --card-bg: #1e293b;
-      --accent: #38bdf8;
-      --accent-hover: #0284c7;
-      --text: #f8fafc;
+      --accent-blue: #38bdf8;
+      --accent-green: #4ade80;
+      --accent-purple: #a855f7;
+      --accent-orange: #fb923c;
+      --text-light: #f8fafc;
       --text-muted: #94a3b8;
-      --border: #334155;
-      --danger: #ef4444;
-      --success: #22c55e;
-      --warning: #f59e0b;
+      --border-color: #334155;
+      --danger-color: #f43f5e;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background-color: var(--bg-color); color: var(--text); padding: 16px; display: flex; justify-content: center; }
-    .container { width: 100%; max-width: 1000px; display: flex; flex-direction: column; gap: 20px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: var(--bg-dark); color: var(--text-light); min-height: 100vh; padding-top: 60px; }
+
+    /* Barra Superior de Navegación */
+    .app-bar {
+      position: fixed; top: 0; left: 0; right: 0; height: 60px;
+      background: #1e293b; border-bottom: 1px solid var(--border-color);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 1rem; z-index: 1000;
+    }
+    .app-bar-title { font-size: 1.25rem; font-weight: bold; color: var(--accent-blue); display: flex; align-items: center; gap: 0.5rem; }
+    .btn-menu { background: none; border: none; color: white; font-size: 1.8rem; cursor: pointer; padding: 0.2rem 0.5rem; }
+
+    /* Menú Lateral (Drawer) */
+    .drawer-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(3px);
+      z-index: 1001; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+    .drawer-overlay.active { opacity: 1; pointer-events: auto; }
+
+    .drawer {
+      position: fixed; top: 0; left: -280px; width: 280px; height: 100%;
+      background: var(--card-bg); z-index: 1002; transition: left 0.3s ease;
+      display: flex; flex-direction: column; border-right: 1px solid var(--border-color);
+    }
+    .drawer.active { left: 0; }
+    .drawer-header { padding: 1.5rem; background: #0f172a; border-bottom: 1px solid var(--border-color); font-size: 1.2rem; font-weight: bold; color: var(--accent-blue); }
+    .drawer-menu { list-style: none; padding: 1rem 0; }
+    .drawer-menu li a {
+      display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1.5rem;
+      color: var(--text-light); text-decoration: none; font-size: 1rem; transition: background 0.2s;
+    }
+    .drawer-menu li a:hover, .drawer-menu li a.active { background: #334155; color: var(--accent-blue); }
+
+    /* Contenedor Principal de Secciones */
+    .container { max-width: 1000px; margin: 0 auto; padding: 1.5rem; }
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+
+    /* Tarjetas e Interfaz */
+    .card { background-color: var(--card-bg); border-radius: 12px; padding: 1.25rem; border: 1px solid var(--border-color); margin-bottom: 1.5rem; }
+    .card-title { font-size: 1.2rem; margin-bottom: 1rem; color: var(--accent-blue); display: flex; align-items: center; gap: 0.5rem; }
+
+    /* Dashboard / Menú Inicial Grid */
+    .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem; }
+    .menu-card {
+      background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px;
+      padding: 1.5rem; text-align: center; cursor: pointer; transition: transform 0.2s, border-color 0.2s;
+    }
+    .menu-card:hover { transform: translateY(-4px); border-color: var(--accent-blue); }
+    .menu-card .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .menu-card h3 { font-size: 1.1rem; color: var(--text-light); }
+    .menu-card p { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.3rem; }
+
+    /* Formularios e Inputs */
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem; }
+    .form-control { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background-color: #0f172a; color: white; font-size: 1rem; }
+    .form-row { display: flex; gap: 0.75rem; }
+    .btn { padding: 0.75rem 1.25rem; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: opacity 0.2s; background: var(--accent-blue); color: #0f172a; width: 100%; font-size: 1rem; }
+    .btn:hover { opacity: 0.9; }
+    .btn-secondary { background: #475569; color: white; }
+
+    /* Listas y Tablas */
+    .athlete-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color); }
+    .btn-icon { background: none; border: none; cursor: pointer; font-size: 1.1rem; padding: 0.2rem 0.4rem; }
     
-    header { 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      gap: 16px; 
-      padding: 10px 0; 
-      border-bottom: 1px solid var(--border);
-    }
-    .brand-title h1 { color: var(--accent); font-size: 2rem; font-weight: 800; letter-spacing: 1px; }
-    .brand-title p { color: var(--text-muted); font-size: 0.9rem; }
+    .table-container { overflow-x: auto; margin-top: 1rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: center; }
+    th, td { border: 1px solid var(--border-color); padding: 0.6rem; min-width: 90px; }
+    th { background-color: #0f172a; color: var(--accent-blue); }
+    .sticky-col { position: sticky; left: 0; background-color: var(--card-bg); z-index: 5; text-align: left; font-weight: bold; width: 140px; }
 
-    .card {
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 20px;
-      border: 1px solid var(--border);
-    }
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .card h2 { font-size: 1.1rem; color: var(--text); display: flex; align-items: center; gap: 8px; }
-
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-
-    form { display: flex; flex-direction: column; gap: 12px; }
-    .form-group { display: flex; flex-direction: column; gap: 6px; }
-    .time-inputs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-
-    label { font-size: 0.85rem; color: var(--text-muted); }
-    input, select {
-      background: #090d16;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 10px;
-      color: var(--text);
-      font-size: 0.95rem;
-      outline: none;
-    }
-    input:focus, select:focus { border-color: var(--accent); }
-
-    button {
-      background: var(--accent);
-      color: #0f172a;
-      font-weight: 600;
-      border: none;
-      border-radius: 6px;
-      padding: 10px 14px;
-      cursor: pointer;
-      transition: background 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.9rem;
-    }
-    button:hover { background: var(--accent-hover); }
-
-    .btn-success { background: var(--success); color: #fff; }
-    .btn-success:hover { background: #16a34a; }
-
-    .athletes-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-    .athlete-row {
-      background: #090d16;
-      border: 1px solid var(--border);
-      padding: 8px 12px;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .athlete-actions { display: flex; gap: 6px; }
-
-    .chart-wrapper { position: relative; height: 320px; width: 100%; }
-
-    /* TABLA MATRIZ */
-    .table-responsive { 
-      overflow-x: auto; 
-      margin-top: 10px; 
-      max-width: 100%;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-    }
-    table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.85rem; text-align: center; }
-    th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); white-space: nowrap; }
-    
-    .super-header th {
-      background-color: #1e3a8a;
-      color: #ffffff;
-      font-size: 0.8rem;
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-    
-    .sub-header th {
-      background-color: #0f172a;
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    .sticky-col {
-      position: sticky;
-      left: 0;
-      background-color: #1e293b;
-      z-index: 5;
-      text-align: left;
-      font-weight: bold;
-      border-right: 2px solid var(--accent);
-    }
-    th.sticky-col { z-index: 10; }
-
-    tbody tr:hover { background-color: rgba(255, 255, 255, 0.03); }
-    tbody tr:hover td.sticky-col { background-color: #26334d; }
-
-    .footer-row td {
-      background-color: #0f172a;
-      font-weight: bold;
-      color: var(--accent);
-    }
-
-    .time-tag {
-      display: inline-block;
-      background: #090d16;
-      padding: 4px 8px;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-      font-family: monospace;
-    }
-
-    .btn-icon { background: none; border: none; cursor: pointer; padding: 2px 4px; font-size: 0.8rem; }
-    .btn-delete { color: var(--danger); }
-    .btn-edit { color: var(--accent); }
-
-    @media (max-width: 768px) {
-      .grid-2 { grid-template-columns: 1fr; }
-      header { flex-direction: column; text-align: center; }
-    }
+    /* Chart Container */
+    .chart-container { position: relative; height: 300px; width: 100%; }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <header>
-    <div class="brand-title">
-      <h1>GymRats</h1>
-      <p>Control de Suspensión Dinámica (En la Nube ☁️)</p>
-    </div>
+  <!-- Barra de Navegación Superior -->
+  <header class="app-bar">
+    <button class="btn-menu" id="menu-toggle">☰</button>
+    <div class="app-bar-title"><span>🏋️</span> <span id="app-title-text">GymRats</span></div>
+    <div style="width: 30px;"></div>
   </header>
 
-  <div class="grid-2">
-    <!-- Módulo 1: Atletas -->
-    <div class="card">
-      <h2>👤 Atletas Registrados</h2>
-      <form id="user-form">
-        <div class="form-group">
-          <label for="new-user">Registrar Nuevo Atleta</label>
-          <div style="display: flex; gap: 8px;">
-            <input type="text" id="new-user" placeholder="Nombre del atleta" style="flex:1" required>
-            <button type="submit">Agregar</button>
-          </div>
-        </div>
-      </form>
+  <!-- Menú Lateral (Drawer) -->
+  <div class="drawer-overlay" id="drawer-overlay"></div>
+  <nav class="drawer" id="drawer">
+    <div class="drawer-header">GymRats Menu</div>
+    <ul class="drawer-menu">
+      <li><a href="#" onclick="navTo('home')">🏠 Menú Principal</a></li>
+      <li><a href="#" onclick="navTo('athletes')">👤 Gestión Atletas</a></li>
+      <li><a href="#" onclick="navTo('suspension')">⏱️ Suspensión Dinámica</a></li>
+      <li><a href="#" onclick="navTo('leg')">🦵 Rutina Leg (Pierna)</a></li>
+      <li><a href="#" onclick="navTo('pull')">🏋️‍♂️ Rutina Pull (Espalda/Bíceps)</a></li>
+      <li><a href="#" onclick="navTo('push')">🧘‍♂️ Rutina Push (Pecho/Tríceps)</a></li>
+    </ul>
+  </nav>
 
-      <label style="margin-top: 15px; display: block;">Lista de Atletas:</label>
-      <div class="athletes-list" id="athletes-container"></div>
-    </div>
+  <main class="container">
 
-    <!-- Módulo 2: Tiempos -->
-    <div class="card">
-      <h2>⏱️ Registrar Tiempo Diario</h2>
-      <form id="time-form">
-        <div class="form-group">
-          <label for="select-user">Atleta Registrado</label>
-          <select id="select-user" required>
-            <option value="">-- Selecciona Atleta --</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="date-input">Fecha</label>
-          <input type="date" id="date-input" required>
-        </div>
-
-        <div class="form-group">
-          <label>Tiempo (Min : Seg : Milésimas)</label>
-          <div class="time-inputs">
-            <input type="number" id="minutes" placeholder="Min" min="0" value="0" required>
-            <input type="number" id="seconds" placeholder="Seg" min="0" max="59" value="0" required>
-            <input type="number" id="millis" placeholder="ms" min="0" max="999" value="0" required>
-          </div>
-        </div>
-
-        <button type="submit">Guardar Marca en Nube</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Módulo 3: Gráfica -->
-  <div class="card">
-    <h2>📈 Gráfica de Avances</h2>
-    <div class="chart-wrapper">
-      <canvas id="progressChart"></canvas>
-    </div>
-  </div>
-
-  <!-- Módulo 4: Tabla Matriz de Registro -->
-  <div class="card">
-    <div class="card-header">
-      <div>
-        <h2>📊 Historial de Registro de Tiempos por Usuario</h2>
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
-          Sincronizado en tiempo real para todos los usuarios.
-        </p>
+    <!-- 1. PANTALLA INICIAL / MENÚ PRINCIPAL -->
+    <section id="view-home" class="view-section active">
+      <div class="card">
+        <h2>Bienvenido a GymRats 👋</h2>
+        <p style="color: var(--text-muted); margin-top: 0.5rem;">Selecciona el módulo de entrenamiento o gestión al que deseas ingresar:</p>
       </div>
-      <button class="btn-success" onclick="exportToCSV()">📊 Exportar a Excel (CSV)</button>
-    </div>
 
-    <div class="table-responsive">
-      <table>
-        <thead>
-          <tr class="super-header">
-            <th class="sticky-col">INFORMACIÓN DEL USUARIO</th>
-            <th id="history-super-header" colspan="1">HISTORIAL DE FECHAS DE INGRESO / REGISTRO DE TIEMPOS (SEGUNDOS)</th>
-          </tr>
-          <tr class="sub-header" id="table-headers">
-            <th class="sticky-col">Nombre del Atleta</th>
-          </tr>
-        </thead>
-        <tbody id="records-table-body"></tbody>
-        <tfoot>
-          <tr class="footer-row" id="table-footer"></tr>
-        </tfoot>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- SDKs e Inicialización de Firebase en Modo Módulo -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { 
-    getFirestore, 
-    collection, 
-    doc, 
-    setDoc, 
-    deleteDoc, 
-    onSnapshot 
-  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-  // Configuración de tu aplicación Firebase
-  const firebaseConfig = {
-    apiKey: "AIzaSyDalZe9eLeLVqJjwOfcS3oDGdwgpOwbGdI",
-    authDomain: "gymrats-db.firebaseapp.com",
-    projectId: "gymrats-db",
-    storageBucket: "gymrats-db.firebasestorage.app",
-    messagingSenderId: "636900407933",
-    appId: "1:636900407933:web:9f8d7cfac058ba73f94f14"
-  };
-
-  // Inicializar Firebase y Firestore
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  const COLORS = ['#38bdf8', '#f43f5e', '#a855f7', '#4ade80', '#fbbf24', '#fb923c', '#f472b6', '#2dd4bf'];
-
-  let users = [];
-  let records = [];
-
-  const userForm = document.getElementById('user-form');
-  const newUserInput = document.getElementById('new-user');
-  const athletesContainer = document.getElementById('athletes-container');
-  const selectUser = document.getElementById('select-user');
-  const timeForm = document.getElementById('time-form');
-  const dateInput = document.getElementById('date-input');
-
-  dateInput.value = new Date().toISOString().split('T')[0];
-
-  // Escuchar Atletas en Tiempo Real
-  onSnapshot(collection(db, "users"), (snapshot) => {
-    users = snapshot.docs.map(doc => doc.data().name).sort();
-    renderUsers();
-    updateUI();
-  });
-
-  // Escuchar Registros de Tiempos en Tiempo Real
-  onSnapshot(collection(db, "records"), (snapshot) => {
-    records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    updateUI();
-  });
-
-  function renderUsers() {
-    athletesContainer.innerHTML = '';
-    selectUser.innerHTML = '<option value="">-- Selecciona Atleta --</option>';
-
-    users.forEach(u => {
-      const row = document.createElement('div');
-      row.className = 'athlete-row';
-      row.innerHTML = `
-        <span>👤 <strong>${u}</strong></span>
-        <div class="athlete-actions">
-          <button class="btn-icon btn-delete" onclick="window.removeUser('${u}')" title="Eliminar usuario">🗑️</button>
+      <div class="menu-grid">
+        <div class="menu-card" onclick="navTo('athletes')">
+          <div class="icon">👤</div>
+          <h3>Gestión de Atletas</h3>
+          <p>Crear, editar o eliminar usuarios</p>
         </div>
-      `;
-      athletesContainer.appendChild(row);
+        <div class="menu-card" onclick="navTo('suspension')">
+          <div class="icon">⏱️</div>
+          <h3>Suspensión Dinámica</h3>
+          <p>Registro de tiempos e historial</p>
+        </div>
+        <div class="menu-card" onclick="navTo('leg')">
+          <div class="icon">🦵</div>
+          <h3>Leg Day</h3>
+          <p>Pierna (Lunes / Jueves)</p>
+        </div>
+        <div class="menu-card" onclick="navTo('pull')">
+          <div class="icon">🏋️‍♂️</div>
+          <h3>Pull Day</h3>
+          <p>Espalda / Bíceps (Martes / Viernes)</p>
+        </div>
+        <div class="menu-card" onclick="navTo('push')">
+          <div class="icon">🧘‍♂️</div>
+          <h3>Push Day</h3>
+          <p>Pecho / Hombro / Tríceps (Miércoles)</p>
+        </div>
+      </div>
+    </section>
 
-      const opt = document.createElement('option');
-      opt.value = u;
-      opt.textContent = u;
-      selectUser.appendChild(opt);
+
+    <!-- 2. GESTIÓN DE ATLETAS -->
+    <section id="view-athletes" class="view-section">
+      <div class="card">
+        <div class="card-title">👤 Administración de Atletas</div>
+        <form id="user-form">
+          <div class="form-group">
+            <label>Nombre del Atleta</label>
+            <input type="text" id="new-user" class="form-control" placeholder="Ej. Oscar Robles" required>
+          </div>
+          <button type="submit" class="btn">＋ Registrar Atleta</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Atletas Registrados</div>
+        <div id="athletes-container">Cargando atletas...</div>
+      </div>
+    </section>
+
+
+    <!-- 3. SUSPENSIÓN DINÁMICA (TIEMPOS) -->
+    <section id="view-suspension" class="view-section">
+      <div class="card">
+        <div class="card-title">⏱️ Registro de Tiempos - Suspensión</div>
+        <form id="time-form">
+          <div class="form-group">
+            <label>Atleta</label>
+            <select id="select-user-suspension" class="form-control" required></select>
+          </div>
+          <div class="form-group">
+            <label>Fecha</label>
+            <input type="date" id="date-input-suspension" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Tiempo (Min : Seg : Ms)</label>
+            <div class="form-row">
+              <input type="number" id="minutes" class="form-control" placeholder="Min" min="0" value="0">
+              <input type="number" id="seconds" class="form-control" placeholder="Seg" min="0" max="59" value="0">
+              <input type="number" id="millis" class="form-control" placeholder="Ms" min="0" max="999" value="0">
+            </div>
+          </div>
+          <button type="submit" class="btn">💾 Guardar Tiempo</button>
+        </form>
+      </div>
+
+      <!-- Gráfica de Progreso -->
+      <div class="card">
+        <div class="card-title">📊 Progreso Individual / Comparativo</div>
+        <div class="chart-container">
+          <canvas id="progressChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Matriz Histórica -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <div class="card-title" style="margin: 0;">📅 Historial Completo</div>
+          <button class="btn btn-secondary" onclick="exportToCSV()" style="width: auto; padding: 0.5rem 1rem;">📥 Exportar Excel</button>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th id="history-super-header" class="sticky-col">INFORMACIÓN DEL ATLETA</th>
+              </tr>
+              <tr id="table-headers"></tr>
+            </thead>
+            <tbody id="records-table-body"></tbody>
+            <tfoot>
+              <tr id="table-footer" style="font-weight: bold; background: #0f172a;"></tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- 4. RUTINAS DE PESO (LEG, PULL, PUSH) -->
+    <section id="view-workout" class="view-section">
+      <div class="card">
+        <div class="card-title" id="workout-title">🏋️ Registro de Sobrecarga</div>
+        <form id="workout-form">
+          <input type="hidden" id="workout-category">
+          <div class="form-group">
+            <label>Atleta</label>
+            <select id="select-user-workout" class="form-control" required></select>
+          </div>
+          <div class="form-group">
+            <label>Fecha</label>
+            <input type="date" id="date-input-workout" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Ejercicio</label>
+            <input type="text" id="workout-exercise" class="form-control" placeholder="Ej. Sentadilla libre, Press de Banca..." required>
+          </div>
+          <div class="form-row form-group">
+            <div style="flex: 1;">
+              <label>Carga / Peso (lb/kg)</label>
+              <input type="number" step="0.5" id="workout-weight" class="form-control" placeholder="150" required>
+            </div>
+            <div style="flex: 1;">
+              <label>Series (Sets)</label>
+              <input type="number" id="workout-sets" class="form-control" placeholder="4" required>
+            </div>
+            <div style="flex: 1;">
+              <label>Repeticiones</label>
+              <input type="number" id="workout-reps" class="form-control" placeholder="10" required>
+            </div>
+          </div>
+          <button type="submit" class="btn">💾 Registrar Carga</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📈 Historial de Cargas Registradas</div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Atleta</th>
+                <th>Ejercicio</th>
+                <th>Carga</th>
+                <th>Series</th>
+                <th>Reps</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="workout-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FIREBASE SDK & LÓGICA DE APLICACIÓN -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+      getFirestore, 
+      collection, 
+      doc, 
+      setDoc, 
+      deleteDoc, 
+      onSnapshot,
+      writeBatch
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDalZe9eLeLVqJjwOfcS3oDGdwgpOwbGdI",
+      authDomain: "gymrats-db.firebaseapp.com",
+      projectId: "gymrats-db",
+      storageBucket: "gymrats-db.firebasestorage.app",
+      messagingSenderId: "636900407933",
+      appId: "1:636900407933:web:9f8d7cfac058ba73f94f14"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const COLORS = ['#38bdf8', '#f43f5e', '#a855f7', '#4ade80', '#fbbf24', '#fb923c', '#f472b6', '#2dd4bf'];
+
+    let users = [];
+    let records = [];
+    let workouts = [];
+    let currentWorkoutCategory = 'leg';
+
+    // UI elements
+    const menuToggle = document.getElementById('menu-toggle');
+    const drawer = document.getElementById('drawer');
+    const drawerOverlay = document.getElementById('drawer-overlay');
+    const appTitleText = document.getElementById('app-title-text');
+
+    // Fechas por defecto
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('date-input-suspension').value = today;
+    document.getElementById('date-input-workout').value = today;
+
+    // --- MANEJO DE NAVEGACIÓN Y MENÚ ---
+    menuToggle.addEventListener('click', () => {
+      drawer.classList.add('active');
+      drawerOverlay.classList.add('active');
     });
-  }
 
-  // Guardar atleta en la Nube
-  userForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = newUserInput.value.trim();
-    if (name && !users.includes(name)) {
-      await setDoc(doc(db, "users", name), { name: name });
-      newUserInput.value = '';
+    drawerOverlay.addEventListener('click', closeMenu);
+
+    function closeMenu() {
+      drawer.classList.remove('active');
+      drawerOverlay.classList.remove('active');
     }
-  });
 
-  // Eliminar atleta
-  window.removeUser = async function(userName) {
-    if (confirm(`¿Eliminar a ${userName} y todas sus marcas?`)) {
-      await deleteDoc(doc(db, "users", userName));
-      const userRecords = records.filter(r => r.user === userName);
-      for (let r of userRecords) {
-        await deleteDoc(doc(db, "records", r.id));
+    window.navTo = function(viewKey) {
+      closeMenu();
+      document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+
+      if (viewKey === 'home') {
+        document.getElementById('view-home').classList.add('active');
+        appTitleText.textContent = "GymRats";
+      } else if (viewKey === 'athletes') {
+        document.getElementById('view-athletes').classList.add('active');
+        appTitleText.textContent = "Atletas";
+      } else if (viewKey === 'suspension') {
+        document.getElementById('view-suspension').classList.add('active');
+        appTitleText.textContent = "Suspensión Dinámica";
+      } else if (['leg', 'pull', 'push'].includes(viewKey)) {
+        currentWorkoutCategory = viewKey;
+        document.getElementById('view-workout').classList.add('active');
+        document.getElementById('workout-category').value = viewKey;
+        
+        const titles = { leg: '🦵 Rutina Leg (Pierna)', pull: '🏋️‍♂️ Rutina Pull (Espalda/Bíceps)', push: '🧘‍♂️ Rutina Push (Pecho/Tríceps)' };
+        document.getElementById('workout-title').textContent = titles[viewKey];
+        appTitleText.textContent = titles[viewKey];
+        renderWorkoutTable();
       }
-    }
-  };
+    };
 
-  // Guardar tiempo en la Nube
-  timeForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const user = selectUser.value;
-    const date = dateInput.value;
-    const min = parseInt(document.getElementById('minutes').value) || 0;
-    const sec = parseInt(document.getElementById('seconds').value) || 0;
-    const ms = parseInt(document.getElementById('millis').value) || 0;
-
-    if (!user) return alert('Selecciona un atleta.');
-
-    const totalSec = (min * 60) + sec + (ms / 1000);
-    if (totalSec <= 0) return alert('Ingresa un tiempo válido.');
-
-    const recordId = `${user}_${date}`;
-    await setDoc(doc(db, "records", recordId), {
-      user, date, min, sec, ms, totalSec
+    // --- ESCUCHAR FIRESTORE EN TIEMPO REAL ---
+    onSnapshot(collection(db, "users"), (snapshot) => {
+      users = snapshot.docs.map(doc => doc.data().name).sort();
+      renderUsers();
+      updateSelects();
     });
 
-    document.getElementById('minutes').value = '0';
-    document.getElementById('seconds').value = '0';
-    document.getElementById('millis').value = '0';
-  });
+    onSnapshot(collection(db, "records"), (snapshot) => {
+      records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      updateSuspensionUI();
+    });
 
-  window.deleteRecord = async function(id) {
-    if (confirm("¿Seguro que deseas eliminar este registro?")) {
-      await deleteDoc(doc(db, "records", id));
-    }
-  };
+    onSnapshot(collection(db, "workouts"), (snapshot) => {
+      workouts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      renderWorkoutTable();
+    });
 
-  // Configuración de Gráfica Chart.js
-  const ctx = document.getElementById('progressChart').getContext('2d');
-  let chart = new Chart(ctx, {
-    type: 'line',
-    data: { datasets: [] },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: {
-          type: 'time',
-          time: { unit: 'day', displayFormats: { day: 'dd/MM' } },
-          grid: { color: '#334155' },
-          ticks: { color: '#94a3b8' }
-        },
-        y: {
-          title: { display: true, text: 'Segundos Totales', color: '#94a3b8' },
-          grid: { color: '#334155' },
-          ticks: { color: '#94a3b8' }
-        }
-      },
-      plugins: { legend: { labels: { color: '#f8fafc' } } }
-    }
-  });
-
-  function updateUI() {
-    const uniqueDates = [...new Set(records.map(r => r.date))].sort((a, b) => new Date(a) - new Date(b));
-
-    const superHeader = document.getElementById('history-super-header');
-    const tableHeaders = document.getElementById('table-headers');
-    const tableBody = document.getElementById('records-table-body');
-    const tableFooter = document.getElementById('table-footer');
-
-    superHeader.colSpan = uniqueDates.length > 0 ? uniqueDates.length : 1;
-
-    tableHeaders.innerHTML = '<th class="sticky-col">Nombre del Atleta</th>';
-    if (uniqueDates.length === 0) {
-      tableHeaders.innerHTML += '<th>Sin Registros</th>';
-    } else {
-      uniqueDates.forEach(d => {
-        const parts = d.split('-');
-        tableHeaders.innerHTML += `<th>${parts[2]}/${parts[1]}/${parts[0]}</th>`;
+    function updateSelects() {
+      const selects = [document.getElementById('select-user-suspension'), document.getElementById('select-user-workout')];
+      selects.forEach(sel => {
+        sel.innerHTML = '<option value="">-- Selecciona Atleta --</option>';
+        users.forEach(u => {
+          const opt = document.createElement('option');
+          opt.value = u;
+          opt.textContent = u;
+          sel.appendChild(opt);
+        });
       });
     }
 
-    tableBody.innerHTML = '';
-    const dateTotals = {};
-    const dateCounts = {};
-    uniqueDates.forEach(d => { dateTotals[d] = 0; dateCounts[d] = 0; });
+    // --- 1. GESTIÓN DE ATLETAS (CREAR, EDITAR, ELIMINAR) ---
+    const userForm = document.getElementById('user-form');
+    const newUserInput = document.getElementById('new-user');
+    const athletesContainer = document.getElementById('athletes-container');
 
-    users.forEach(u => {
-      const tr = document.createElement('tr');
-      let rowHTML = `<td class="sticky-col">👤 ${u}</td>`;
+    userForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = newUserInput.value.trim();
+      if (name && !users.includes(name)) {
+        try {
+          await setDoc(doc(db, "users", name), { name });
+          newUserInput.value = '';
+        } catch (err) { alert("Error: " + err.message); }
+      }
+    });
 
-      if (uniqueDates.length === 0) {
-        rowHTML += '<td style="color: var(--text-muted);">-</td>';
-      } else {
-        uniqueDates.forEach(d => {
-          const userRec = records.find(r => r.user === u && r.date === d);
-          if (userRec) {
-            dateTotals[d] += userRec.totalSec;
-            dateCounts[d] += 1;
-            rowHTML += `
-              <td>
-                <div class="time-tag">
-                  ${userRec.totalSec.toFixed(1)}s
-                  <button class="btn-icon btn-delete" onclick="window.deleteRecord('${userRec.id}')" title="Eliminar">🗑️</button>
-                </div>
-              </td>`;
-          } else {
-            rowHTML += `<td style="color: var(--text-muted);">-</td>`;
+    function renderUsers() {
+      athletesContainer.innerHTML = '';
+      users.forEach(u => {
+        const row = document.createElement('div');
+        row.className = 'athlete-row';
+        row.innerHTML = `
+          <span>👤 <strong>${u}</strong></span>
+          <div>
+            <button class="btn-icon" onclick="window.editUser('${u}')" title="Editar Nombre">✏️</button>
+            <button class="btn-icon" onclick="window.removeUser('${u}')" title="Eliminar Atleta">🗑️</button>
+          </div>
+        `;
+        athletesContainer.appendChild(row);
+      });
+    }
+
+    // EDITAR NOMBRE DEL ATLETA
+    window.editUser = async function(oldName) {
+      const newName = prompt("Ingresa el nuevo nombre para " + oldName + ":", oldName);
+      if (newName && newName.trim() !== "" && newName.trim() !== oldName) {
+        const cleanNewName = newName.trim();
+        if (users.includes(cleanNewName)) return alert("Ya existe un atleta con ese nombre.");
+
+        try {
+          // Crear nuevo atleta y eliminar anterior
+          await setDoc(doc(db, "users", cleanNewName), { name: cleanNewName });
+          await deleteDoc(doc(db, "users", oldName));
+
+          // Actualizar registros de suspensión
+          const userRecords = records.filter(r => r.user === oldName);
+          for (let r of userRecords) {
+            await setDoc(doc(db, "records", `${cleanNewName}_${r.date}`), { ...r, user: cleanNewName, id: `${cleanNewName}_${r.date}` });
+            await deleteDoc(doc(db, "records", r.id));
           }
+
+          // Actualizar registros de workout
+          const userWorkouts = workouts.filter(w => w.user === oldName);
+          for (let w of userWorkouts) {
+            await setDoc(doc(db, "workouts", w.id), { ...w, user: cleanNewName });
+          }
+
+          alert("Nombre actualizado con éxito.");
+        } catch (err) {
+          alert("Error al actualizar: " + err.message);
+        }
+      }
+    };
+
+    window.removeUser = async function(userName) {
+      if (confirm(`¿Eliminar a ${userName} y todo su historial de marcas/pesos?`)) {
+        try {
+          await deleteDoc(doc(db, "users", userName));
+          records.filter(r => r.user === userName).forEach(async r => await deleteDoc(doc(db, "records", r.id)));
+          workouts.filter(w => w.user === userName).forEach(async w => await deleteDoc(doc(db, "workouts", w.id)));
+        } catch (err) { alert("Error: " + err.message); }
+      }
+    };
+
+    // --- 2. REGISTRO DE SUSPENSIÓN DINÁMICA ---
+    const timeForm = document.getElementById('time-form');
+    timeForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const user = document.getElementById('select-user-suspension').value;
+      const date = document.getElementById('date-input-suspension').value;
+      const min = parseInt(document.getElementById('minutes').value) || 0;
+      const sec = parseInt(document.getElementById('seconds').value) || 0;
+      const ms = parseInt(document.getElementById('millis').value) || 0;
+
+      if (!user) return alert('Selecciona un atleta.');
+      const totalSec = (min * 60) + sec + (ms / 1000);
+      if (totalSec <= 0) return alert('Ingresa un tiempo válido.');
+
+      const recordId = `${user}_${date}`;
+      try {
+        await setDoc(doc(db, "records", recordId), { user, date, min, sec, ms, totalSec });
+        document.getElementById('minutes').value = '0';
+        document.getElementById('seconds').value = '0';
+        document.getElementById('millis').value = '0';
+      } catch (err) { alert("Error: " + err.message); }
+    });
+
+    window.deleteRecord = async function(id) {
+      if (confirm("¿Eliminar registro de tiempo?")) {
+        await deleteDoc(doc(db, "records", id));
+      }
+    };
+
+    // Gráfica
+    const ctx = document.getElementById('progressChart').getContext('2d');
+    let chart = new Chart(ctx, {
+      type: 'line',
+      data: { datasets: [] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          x: { type: 'time', time: { unit: 'day', displayFormats: { day: 'dd/MM' } }, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+          y: { title: { display: true, text: 'Segundos', color: '#94a3b8' }, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+        },
+        plugins: { legend: { labels: { color: '#f8fafc' } } }
+      }
+    });
+
+    function updateSuspensionUI() {
+      const uniqueDates = [...new Set(records.map(r => r.date))].sort((a, b) => new Date(a) - new Date(b));
+      const tableHeaders = document.getElementById('table-headers');
+      const tableBody = document.getElementById('records-table-body');
+      const tableFooter = document.getElementById('table-footer');
+
+      tableHeaders.innerHTML = '<th class="sticky-col">Nombre del Atleta</th>';
+      if (uniqueDates.length === 0) { tableHeaders.innerHTML += '<th>Sin Registros</th>'; }
+      else { uniqueDates.forEach(d => { const p = d.split('-'); tableHeaders.innerHTML += `<th>${p[2]}/${p[1]}/${p[0]}</th>`; }); }
+
+      tableBody.innerHTML = '';
+      const dateTotals = {}; const dateCounts = {};
+      uniqueDates.forEach(d => { dateTotals[d] = 0; dateCounts[d] = 0; });
+
+      users.forEach(u => {
+        const tr = document.createElement('tr');
+        let rowHTML = `<td class="sticky-col">👤 ${u}</td>`;
+        if (uniqueDates.length === 0) { rowHTML += '<td style="color: var(--text-muted);">-</td>'; } 
+        else {
+          uniqueDates.forEach(d => {
+            const userRec = records.find(r => r.user === u && r.date === d);
+            if (userRec) {
+              dateTotals[d] += userRec.totalSec; dateCounts[d] += 1;
+              rowHTML += `<td><div style="display:flex; align-items:center; justify-content:center; gap:4px;">${userRec.totalSec.toFixed(1)}s <button class="btn-icon" onclick="window.deleteRecord('${userRec.id}')">🗑️</button></div></td>`;
+            } else { rowHTML += `<td style="color: var(--text-muted);">-</td>`; }
+          });
+        }
+        tr.innerHTML = rowHTML; tableBody.appendChild(tr);
+      });
+
+      let footerHTML = '<td class="sticky-col">Promedio</td>';
+      if (uniqueDates.length === 0) { footerHTML += '<td>-</td>'; } 
+      else {
+        uniqueDates.forEach(d => {
+          footerHTML += `<td>${dateCounts[d] > 0 ? (dateTotals[d] / dateCounts[d]).toFixed(1) + 's' : '-'}</td>`;
         });
       }
+      tableFooter.innerHTML = footerHTML;
 
-      tr.innerHTML = rowHTML;
-      tableBody.appendChild(tr);
+      // Dataset Chart
+      chart.data.datasets = users.map((u, i) => {
+        const userRecords = records.filter(r => r.user === u).sort((a, b) => new Date(a.date) - new Date(b.date));
+        return {
+          label: u, data: userRecords.map(r => ({ x: r.date, y: r.totalSec })),
+          borderColor: COLORS[i % COLORS.length], backgroundColor: COLORS[i % COLORS.length], borderWidth: 2
+        };
+      });
+      chart.update();
+    }
+
+    // Exportar Excel
+    window.exportToCSV = function() {
+      if (records.length === 0) return alert("No hay registros para exportar.");
+      const uniqueDates = [...new Set(records.map(r => r.date))].sort((a, b) => new Date(a) - new Date(b));
+      let csv = "data:text/csv;charset=utf-8, Atleta," + uniqueDates.map(d => `"${d}"`).join(",") + "\n";
+      users.forEach(u => {
+        let row = `"${u}"`;
+        uniqueDates.forEach(d => {
+          const rec = records.find(r => r.user === u && r.date === d);
+          row += `,${rec ? rec.totalSec.toFixed(1) : ''}`;
+        });
+        csv += row + "\n";
+      });
+      const link = document.createElement("a");
+      link.href = encodeURI(csv);
+      link.download = `GymRats_Tiempos_${today}.csv`;
+      link.click();
+    };
+
+    // --- 3. REGISTRO DE CARGAS (LEG, PULL, PUSH) ---
+    const workoutForm = document.getElementById('workout-form');
+    workoutForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const user = document.getElementById('select-user-workout').value;
+      const date = document.getElementById('date-input-workout').value;
+      const exercise = document.getElementById('workout-exercise').value.trim();
+      const weight = parseFloat(document.getElementById('workout-weight').value) || 0;
+      const sets = parseInt(document.getElementById('workout-sets').value) || 0;
+      const reps = parseInt(document.getElementById('workout-reps').value) || 0;
+      const category = currentWorkoutCategory;
+
+      if (!user) return alert('Selecciona un atleta.');
+
+      const workoutId = `w_${Date.now()}`;
+      try {
+        await setDoc(doc(db, "workouts", workoutId), { user, date, exercise, weight, sets, reps, category });
+        document.getElementById('workout-exercise').value = '';
+        document.getElementById('workout-weight').value = '';
+        document.getElementById('workout-sets').value = '';
+        document.getElementById('workout-reps').value = '';
+      } catch (err) { alert("Error: " + err.message); }
     });
 
-    let footerHTML = '<td class="sticky-col">Promedio / Total General</td>';
-    if (uniqueDates.length === 0) {
-      footerHTML += '<td>-</td>';
-    } else {
-      uniqueDates.forEach(d => {
-        if (dateCounts[d] > 0) {
-          const avg = dateTotals[d] / dateCounts[d];
-          footerHTML += `<td>${avg.toFixed(1)}s</td>`;
-        } else {
-          footerHTML += '<td>-</td>';
-        }
+    function renderWorkoutTable() {
+      const tbody = document.getElementById('workout-table-body');
+      tbody.innerHTML = '';
+      const filtered = workouts.filter(w => w.category === currentWorkoutCategory)
+                               .sort((a,b) => new Date(b.date) - new Date(a.date));
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="color: var(--text-muted);">No hay ejercicios registrados en este grupo.</td></tr>';
+        return;
+      }
+
+      filtered.forEach(w => {
+        const tr = document.createElement('tr');
+        const p = w.date.split('-');
+        tr.innerHTML = `
+          <td>${p[2]}/${p[1]}/${p[0]}</td>
+          <td>👤 ${w.user}</td>
+          <td><strong>${w.exercise}</strong></td>
+          <td style="color: var(--accent-green); font-weight: bold;">${w.weight} lb/kg</td>
+          <td>${w.sets}</td>
+          <td>${w.reps}</td>
+          <td><button class="btn-icon" onclick="window.deleteWorkout('${w.id}')">🗑️</button></td>
+        `;
+        tbody.appendChild(tr);
       });
     }
-    tableFooter.innerHTML = footerHTML;
 
-    // Actualizar datos de la Gráfica
-    const datasets = users.map((u, i) => {
-      const userRecords = records.filter(r => r.user === u).sort((a, b) => new Date(a.date) - new Date(b.date));
-      return {
-        label: u,
-        data: userRecords.map(r => ({ x: r.date, y: r.totalSec })),
-        borderColor: COLORS[i % COLORS.length],
-        backgroundColor: COLORS[i % COLORS.length],
-        borderWidth: 2,
-        tension: 0.2,
-        pointRadius: 4
-      };
-    });
-
-    chart.data.datasets = datasets;
-    chart.update();
-  }
-
-  // Exportar matriz a Excel / CSV
-  window.exportToCSV = function() {
-    if (records.length === 0) return alert("No hay registros para exportar.");
-
-    const uniqueDates = [...new Set(records.map(r => r.date))].sort((a, b) => new Date(a) - new Date(b));
-    let csvContent = "data:text/csv;charset=utf-8,";
-
-    csvContent += `"INFORMACIÓN DEL USUARIO",` + uniqueDates.map(() => `"HISTORIAL DE FECHAS DE INGRESO / REGISTRO DE TIEMPOS (SEGUNDOS)"`).join(",") + "\n";
-
-    const formattedDates = uniqueDates.map(d => {
-      const parts = d.split('-');
-      return `"${parts[2]}/${parts[1]}/${parts[0]}"`;
-    });
-    csvContent += `"Nombre del Atleta",` + formattedDates.join(",") + "\n";
-
-    const dateTotals = {};
-    const dateCounts = {};
-    uniqueDates.forEach(d => { dateTotals[d] = 0; dateCounts[d] = 0; });
-
-    users.forEach(u => {
-      let row = `"${u}"`;
-      uniqueDates.forEach(d => {
-        const userRec = records.find(r => r.user === u && r.date === d);
-        if (userRec) {
-          row += `,${userRec.totalSec.toFixed(1)}`;
-          dateTotals[d] += userRec.totalSec;
-          dateCounts[d] += 1;
-        } else {
-          row += `,""`;
-        }
-      });
-      csvContent += row + "\n";
-    });
-
-    let footerRow = `"Promedio / Total General"`;
-    uniqueDates.forEach(d => {
-      if (dateCounts[d] > 0) {
-        footerRow += `,${(dateTotals[d] / dateCounts[d]).toFixed(1)}`;
-      } else {
-        footerRow += `,""`;
+    window.deleteWorkout = async function(id) {
+      if (confirm("¿Eliminar este registro de ejercicio?")) {
+        await deleteDoc(doc(db, "workouts", id));
       }
-    });
-    csvContent += footerRow + "\n";
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `GymRats_Historial_Matriz_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-</script>
-
+    };
+  </script>
 </body>
 </html>
