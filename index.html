@@ -81,7 +81,7 @@
     .form-group { margin-bottom: 1rem; }
     .form-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem; }
     .form-control { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background-color: #0f172a; color: white; font-size: 1rem; }
-    .form-row { display: flex; gap: 0.75rem; }
+    .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
     .btn { padding: 0.75rem 1.25rem; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: opacity 0.2s; background: var(--accent-blue); color: #0f172a; width: 100%; font-size: 1rem; }
     .btn:hover { opacity: 0.9; }
     .btn-secondary { background: #475569; color: white; }
@@ -103,6 +103,11 @@
     .sticky-col { position: sticky; left: 0; background-color: var(--card-bg); z-index: 5; text-align: left; font-weight: bold; width: 140px; }
 
     .chart-container { position: relative; height: 320px; width: 100%; }
+
+    /* Sub-card para agregar nuevos ejercicios */
+    .new-exercise-box {
+      background: #0f172a; border: 1px dashed var(--accent-blue); border-radius: 8px; padding: 1rem; margin-top: 0.5rem; margin-bottom: 1rem; display: none;
+    }
   </style>
 </head>
 <body>
@@ -207,9 +212,9 @@
           <div class="form-group">
             <label>Tiempo (Min : Seg : Ms)</label>
             <div class="form-row">
-              <input type="number" id="minutes" class="form-control" placeholder="Min" min="0" value="0">
-              <input type="number" id="seconds" class="form-control" placeholder="Seg" min="0" max="59" value="0">
-              <input type="number" id="millis" class="form-control" placeholder="Ms" min="0" max="999" value="0">
+              <input type="number" id="minutes" class="form-control" style="flex:1;" placeholder="Min" min="0" value="0">
+              <input type="number" id="seconds" class="form-control" style="flex:1;" placeholder="Seg" min="0" max="59" value="0">
+              <input type="number" id="millis" class="form-control" style="flex:1;" placeholder="Ms" min="0" max="999" value="0">
             </div>
           </div>
           <button type="submit" class="btn">💾 Guardar Tiempo</button>
@@ -259,27 +264,45 @@
             <label>Fecha</label>
             <input type="date" id="date-input-workout" class="form-control" required>
           </div>
-          <div class="form-row form-group">
-            <div style="flex: 1.5;">
-              <label>Nombre del Ejercicio</label>
-              <input type="text" id="workout-exercise" class="form-control" placeholder="Ej. Sentadilla libre, Press Banca..." required>
+          
+          <div class="form-group">
+            <label>Nombre del Ejercicio (Listado Centralizado)</label>
+            <select id="workout-exercise-select" class="form-control" onchange="handleExerciseSelectChange(this.value)" required>
+              <option value="">-- Selecciona Ejercicio --</option>
+              <option value="NEW_EXERCISE" style="color: var(--accent-blue); font-weight: bold;">➕ Registrar nuevo ejercicio en el catálogo...</option>
+            </select>
+          </div>
+
+          <!-- Caja para registrar un nuevo ejercicio si no está en la lista -->
+          <div id="new-exercise-box" class="new-exercise-box">
+            <div style="font-size: 0.9rem; font-weight: bold; color: var(--accent-blue); margin-bottom: 0.5rem;">Crear Ejercicio Máster</div>
+            <div class="form-row">
+              <div style="flex: 1.5; min-width: 180px;">
+                <label style="font-size:0.75rem;">Nombre (Ej. Sentadilla Barra / Squat)</label>
+                <input type="text" id="new-exercise-name" class="form-control" placeholder="Ej. Sentadilla Búlgara">
+              </div>
+              <div style="flex: 1; min-width: 150px;">
+                <label style="font-size:0.75rem;">Tipo / Músculo</label>
+                <select id="new-exercise-type" class="form-control">
+                  <option value="Cuádriceps">Cuádriceps</option>
+                  <option value="Isquiotibiales/Glúteos">Isquiotibiales / Glúteos</option>
+                  <option value="Pecho">Pecho</option>
+                  <option value="Espalda">Espalda</option>
+                  <option value="Hombro">Hombro</option>
+                  <option value="Bíceps">Bíceps</option>
+                  <option value="Tríceps">Tríceps</option>
+                  <option value="Calistenia">Calistenia / Peso Corporal</option>
+                  <option value="Polea / Máquina">Polea / Máquina</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
             </div>
-            <div style="flex: 1;">
-              <label>Tipo de Ejercicio</label>
-              <select id="workout-type" class="form-control" required>
-                <option value="Cuádriceps">Cuádriceps</option>
-                <option value="Isquiotibiales/Glúteos">Isquiotibiales / Glúteos</option>
-                <option value="Pecho">Pecho</option>
-                <option value="Espalda">Espalda</option>
-                <option value="Hombro">Hombro</option>
-                <option value="Bíceps">Bíceps</option>
-                <option value="Tríceps">Tríceps</option>
-                <option value="Calistenia">Calistenia / Peso Corporal</option>
-                <option value="Polea / Máquina">Polea / Máquina</option>
-                <option value="Otro">Otro</option>
-              </select>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+              <button type="button" class="btn" style="padding: 0.4rem;" onclick="saveCustomExercise()">Guardar en Catálogo</button>
+              <button type="button" class="btn btn-secondary" style="padding: 0.4rem;" onclick="cancelNewExercise()">Cancelar</button>
             </div>
           </div>
+
           <div class="form-row form-group">
             <div style="flex: 1;">
               <label>Carga / Peso (lb/kg)</label>
@@ -320,18 +343,18 @@
       </div>
     </section>
 
-    <!-- 5. APARTADO NUEVO: DATOS Y GRÁFICAS DE PROGRESO POR EJERCICIO -->
+    <!-- 5. APARTADO: DATOS Y GRÁFICAS DE PROGRESO POR EJERCICIO -->
     <section id="view-analytics" class="view-section">
       <div class="card">
         <div class="card-title">📈 Filtros de Progreso de Fuerza</div>
         <div class="form-row">
-          <div style="flex: 1;">
+          <div style="flex: 1; min-width: 160px;">
             <label style="font-size:0.85rem; color:var(--text-muted);">Filtrar por Atleta</label>
             <select id="analytics-user" class="form-control" onchange="renderAnalytics()"></select>
           </div>
-          <div style="flex: 1;">
-            <label style="font-size:0.85rem; color:var(--text-muted);">Filtrar por Tipo de Ejercicio</label>
-            <select id="analytics-type" class="form-control" onchange="renderAnalytics()">
+          <div style="flex: 1; min-width: 160px;">
+            <label style="font-size:0.85rem; color:var(--text-muted);">Filtrar por Tipo</label>
+            <select id="analytics-type" class="form-control" onchange="filterAnalyticsExercises()">
               <option value="ALL">-- Todos los Tipos --</option>
               <option value="Cuádriceps">Cuádriceps</option>
               <option value="Isquiotibiales/Glúteos">Isquiotibiales / Glúteos</option>
@@ -343,6 +366,12 @@
               <option value="Calistenia">Calistenia</option>
               <option value="Polea / Máquina">Polea / Máquina</option>
               <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div style="flex: 1; min-width: 160px;">
+            <label style="font-size:0.85rem; color:var(--text-muted);">Filtrar por Ejercicio Específico</label>
+            <select id="analytics-exercise" class="form-control" onchange="renderAnalytics()">
+              <option value="ALL">-- Todos los Ejercicios --</option>
             </select>
           </div>
         </div>
@@ -396,7 +425,7 @@
 
   </main>
 
-  <!-- FIREBASE & LÓGICA -->
+  <!-- FIREBASE & LÓGICA DE NEGOCIO -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { 
@@ -425,6 +454,7 @@
     let users = [];
     let records = [];
     let workouts = [];
+    let customExercises = [];
     let currentWorkoutCategory = 'leg';
 
     const menuToggle = document.getElementById('menu-toggle');
@@ -436,7 +466,7 @@
     document.getElementById('date-input-suspension').value = today;
     document.getElementById('date-input-workout').value = today;
 
-    // Navegación Menu
+    // Navegación
     menuToggle.addEventListener('click', () => {
       drawer.classList.add('active');
       drawerOverlay.classList.add('active');
@@ -478,7 +508,7 @@
       }
     };
 
-    // Firebase Listeners
+    // Firebase Realtime Listeners
     onSnapshot(collection(db, "users"), (snapshot) => {
       users = snapshot.docs.map(doc => doc.data().name).sort();
       renderUsers();
@@ -494,6 +524,12 @@
       workouts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       renderWorkoutTable();
       renderAnalytics();
+    });
+
+    onSnapshot(collection(db, "exercises"), (snapshot) => {
+      customExercises = snapshot.docs.map(doc => doc.data()).sort((a,b) => a.name.localeCompare(b.name));
+      populateExerciseSelect();
+      filterAnalyticsExercises();
     });
 
     function updateSelects() {
@@ -515,6 +551,57 @@
         if (currentVal) sel.value = currentVal;
       });
     }
+
+    // Catálogo de Ejercicios
+    function populateExerciseSelect() {
+      const sel = document.getElementById('workout-exercise-select');
+      const currentVal = sel.value;
+      
+      sel.innerHTML = `
+        <option value="">-- Selecciona Ejercicio --</option>
+        <option value="NEW_EXERCISE" style="color: var(--accent-blue); font-weight: bold;">➕ Registrar nuevo ejercicio en el catálogo...</option>
+      `;
+
+      customExercises.forEach(ex => {
+        const opt = document.createElement('option');
+        opt.value = ex.name;
+        opt.textContent = `${ex.name} (${ex.type})`;
+        sel.appendChild(opt);
+      });
+
+      if (currentVal && currentVal !== 'NEW_EXERCISE') sel.value = currentVal;
+    }
+
+    window.handleExerciseSelectChange = function(val) {
+      const box = document.getElementById('new-exercise-box');
+      if (val === 'NEW_EXERCISE') {
+        box.style.display = 'block';
+      } else {
+        box.style.display = 'none';
+      }
+    };
+
+    window.cancelNewExercise = function() {
+      document.getElementById('new-exercise-box').style.display = 'none';
+      document.getElementById('workout-exercise-select').value = '';
+    };
+
+    window.saveCustomExercise = async function() {
+      const name = document.getElementById('new-exercise-name').value.trim();
+      const type = document.getElementById('new-exercise-type').value;
+
+      if (!name) return alert('Ingresa el nombre del nuevo ejercicio.');
+      
+      const exists = customExercises.some(e => e.name.toLowerCase() === name.toLowerCase());
+      if (exists) return alert('Este ejercicio ya existe en el catálogo.');
+
+      try {
+        await setDoc(doc(db, "exercises", name.toLowerCase().replace(/\s+/g, '_')), { name, type });
+        document.getElementById('new-exercise-name').value = '';
+        document.getElementById('new-exercise-box').style.display = 'none';
+        document.getElementById('workout-exercise-select').value = name;
+      } catch (err) { alert("Error al guardar ejercicio: " + err.message); }
+    };
 
     // Atletas
     const userForm = document.getElementById('user-form');
@@ -567,13 +654,13 @@
             await setDoc(doc(db, "workouts", w.id), { ...w, user: cleanNewName });
           });
 
-          alert("Nombre actualizado con éxito.");
+          alert("Nombre actualizado.");
         } catch (err) { alert("Error al actualizar: " + err.message); }
       }
     };
 
     window.removeUser = async function(userName) {
-      if (confirm(`¿Eliminar a ${userName} y todo su historial de marcas/pesos?`)) {
+      if (confirm(`¿Eliminar a ${userName} y todo su historial?`)) {
         try {
           await deleteDoc(doc(db, "users", userName));
           records.filter(r => r.user === userName).forEach(async r => await deleteDoc(doc(db, "records", r.id)));
@@ -698,19 +785,22 @@
       e.preventDefault();
       const user = document.getElementById('select-user-workout').value;
       const date = document.getElementById('date-input-workout').value;
-      const exercise = document.getElementById('workout-exercise').value.trim();
-      const type = document.getElementById('workout-type').value;
+      const exerciseSel = document.getElementById('workout-exercise-select').value;
       const weight = parseFloat(document.getElementById('workout-weight').value) || 0;
       const sets = parseInt(document.getElementById('workout-sets').value) || 0;
       const reps = parseInt(document.getElementById('workout-reps').value) || 0;
       const category = currentWorkoutCategory;
 
       if (!user) return alert('Selecciona un atleta.');
+      if (!exerciseSel || exerciseSel === 'NEW_EXERCISE') return alert('Selecciona un ejercicio válido de la lista.');
+
+      const exerciseObj = customExercises.find(e => e.name === exerciseSel);
+      const type = exerciseObj ? exerciseObj.type : 'General';
 
       const workoutId = `w_${Date.now()}`;
       try {
-        await setDoc(doc(db, "workouts", workoutId), { user, date, exercise, type, weight, sets, reps, category });
-        document.getElementById('workout-exercise').value = '';
+        await setDoc(doc(db, "workouts", workoutId), { user, date, exercise: exerciseSel, type, weight, sets, reps, category });
+        document.getElementById('workout-exercise-select').value = '';
         document.getElementById('workout-weight').value = '';
         document.getElementById('workout-sets').value = '';
         document.getElementById('workout-reps').value = '';
@@ -751,7 +841,7 @@
       }
     };
 
-    // --- NUEVO MÓDULO: ANALÍTICAS Y GRÁFICAS DE CARGA ---
+    // --- ANALÍTICAS Y GRÁFICAS DE CARGA ---
     const ctxWorkout = document.getElementById('workoutChart').getContext('2d');
     let workoutChart = new Chart(ctxWorkout, {
       type: 'line',
@@ -766,13 +856,35 @@
       }
     });
 
+    window.filterAnalyticsExercises = function() {
+      const selectedType = document.getElementById('analytics-type')?.value || 'ALL';
+      const exSelect = document.getElementById('analytics-exercise');
+      if (!exSelect) return;
+
+      exSelect.innerHTML = '<option value="ALL">-- Todos los Ejercicios --</option>';
+      const filteredEx = selectedType === 'ALL' 
+        ? customExercises 
+        : customExercises.filter(e => e.type === selectedType);
+
+      filteredEx.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.name;
+        opt.textContent = e.name;
+        exSelect.appendChild(opt);
+      });
+
+      renderAnalytics();
+    };
+
     window.renderAnalytics = function() {
       const selectedUser = document.getElementById('analytics-user')?.value || 'ALL';
       const selectedType = document.getElementById('analytics-type')?.value || 'ALL';
+      const selectedExercise = document.getElementById('analytics-exercise')?.value || 'ALL';
 
       let filtered = [...workouts];
       if (selectedUser !== 'ALL') filtered = filtered.filter(w => w.user === selectedUser);
       if (selectedType !== 'ALL') filtered = filtered.filter(w => (w.type || 'General') === selectedType);
+      if (selectedExercise !== 'ALL') filtered = filtered.filter(w => w.exercise === selectedExercise);
 
       filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -785,7 +897,7 @@
       document.getElementById('kpi-total-sessions').textContent = totalSessions;
       document.getElementById('kpi-volume').textContent = `${totalVolume.toLocaleString()} lb/kg`;
 
-      // Tabla Analytics
+      // Tabla
       const tbody = document.getElementById('analytics-table-body');
       tbody.innerHTML = '';
       if (filtered.length === 0) {
@@ -808,7 +920,7 @@
         });
       }
 
-      // Gráfica por Atletas seleccionados
+      // Gráfica
       let activeUsers = selectedUser === 'ALL' ? users : [selectedUser];
       workoutChart.data.datasets = activeUsers.map((u, i) => {
         const uWorkouts = filtered.filter(w => w.user === u);
