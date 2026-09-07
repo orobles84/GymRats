@@ -3,11 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GymRats - Tracker de Entrenamiento</title>
+  <title>GymRats - Tracker de Entrenamiento & InBody</title>
   
-  <!-- Chart.js y Adapter para fechas -->
+  <!-- Chart.js, Adapter de Fechas, Tesseract OCR y HTML2PDF -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
     :root {
@@ -24,7 +26,16 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: var(--bg-dark); color: var(--text-light); min-height: 100vh; padding-top: 60px; }
+    body { background-color: var(--bg-dark); color: var(--text-light); min-height: 100vh; padding-top: 65px; padding-bottom: 30px; }
+
+    /* Version Display */
+    .app-version-badge {
+      position: fixed; bottom: 8px; right: 12px;
+      background: rgba(15, 23, 42, 0.9); border: 1px solid var(--border-color);
+      color: var(--accent-blue); padding: 3px 8px; border-radius: 6px;
+      font-size: 0.75rem; font-family: monospace; font-weight: bold; z-index: 2000;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    }
 
     /* Barra Superior */
     .app-bar {
@@ -33,7 +44,7 @@
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 1rem; z-index: 1000;
     }
-    .app-bar-title { font-size: 1.25rem; font-weight: bold; color: var(--accent-blue); display: flex; align-items: center; gap: 0.5rem; }
+    .app-bar-title { font-size: 1.2rem; font-weight: bold; color: var(--accent-blue); display: flex; align-items: center; gap: 0.5rem; }
     .btn-menu { background: none; border: none; color: white; font-size: 1.8rem; cursor: pointer; padding: 0.2rem 0.5rem; }
 
     /* Menú Lateral */
@@ -58,97 +69,83 @@
     }
     .drawer-menu li a:hover, .drawer-menu li a.active { background: #334155; color: var(--accent-blue); }
 
-    /* Layout */
-    .container { max-width: 1000px; margin: 0 auto; padding: 1.5rem; }
+    /* Layout Principal */
+    .container { max-width: 1050px; margin: 0 auto; padding: 1rem; }
     .view-section { display: none; }
     .view-section.active { display: block; }
 
     .card { background-color: var(--card-bg); border-radius: 12px; padding: 1.25rem; border: 1px solid var(--border-color); margin-bottom: 1.5rem; }
-    .card-title { font-size: 1.2rem; margin-bottom: 1rem; color: var(--accent-blue); display: flex; align-items: center; gap: 0.5rem; }
+    .card-title { font-size: 1.15rem; margin-bottom: 1rem; color: var(--accent-blue); display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
 
     /* Dashboard Grid */
-    .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
+    .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1rem; }
     .menu-card {
       background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px;
-      padding: 1.5rem; text-align: center; cursor: pointer; transition: transform 0.2s, border-color 0.2s;
+      padding: 1.25rem; text-align: center; cursor: pointer; transition: transform 0.2s, border-color 0.2s;
     }
     .menu-card:hover { transform: translateY(-4px); border-color: var(--accent-blue); }
-    .menu-card .icon { font-size: 2.2rem; margin-bottom: 0.5rem; }
-    .menu-card h3 { font-size: 1.05rem; color: var(--text-light); }
-    .menu-card p { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem; }
+    .menu-card .icon { font-size: 2rem; margin-bottom: 0.4rem; }
+    .menu-card h3 { font-size: 1rem; color: var(--text-light); }
+    .menu-card p { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.3rem; }
 
     /* Form UI */
     .form-group { margin-bottom: 1rem; }
     .form-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem; }
-    .form-control { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background-color: #0f172a; color: white; font-size: 1rem; }
+    .form-control { width: 100%; padding: 0.7rem; border-radius: 8px; border: 1px solid var(--border-color); background-color: #0f172a; color: white; font-size: 0.95rem; }
     .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-    .btn { padding: 0.75rem 1.25rem; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: opacity 0.2s; background: var(--accent-blue); color: #0f172a; width: 100%; font-size: 1rem; }
+    .btn { padding: 0.75rem 1.25rem; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: opacity 0.2s; background: var(--accent-blue); color: #0f172a; width: 100%; font-size: 0.95rem; text-align: center; text-decoration: none; display: inline-block; }
     .btn:hover { opacity: 0.9; }
     .btn-secondary { background: #475569; color: white; }
+    .btn-success { background: var(--accent-green); color: #0f172a; }
+    .btn-purple { background: var(--accent-purple); color: white; }
 
-    /* Metric Badges & Tags */
-    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold; background: #334155; color: var(--accent-blue); }
-    .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-    .kpi-card { background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; text-align: center; }
-    .kpi-value { font-size: 1.5rem; font-weight: bold; color: var(--accent-green); margin-top: 0.3rem; }
+    /* Componentes de Selección e InBody Specifics */
+    .active-user-container { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--text-muted); }
+    .active-user-select { background: #0f172a; border: 1px solid var(--border-color); color: var(--accent-blue); border-radius: 6px; padding: 0.25rem 0.5rem; font-weight: bold; outline: none; cursor: pointer; }
 
-    /* Tables */
-    .athlete-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color); }
-    .btn-icon { background: none; border: none; cursor: pointer; font-size: 1.1rem; padding: 0.2rem 0.4rem; }
+    .inbody-score-box { background: #0f172a; border: 1px solid var(--accent-blue); border-radius: 10px; padding: 1rem; text-align: center; margin-bottom: 1rem; }
+    .inbody-score-val { font-size: 2.8rem; font-weight: 800; color: var(--accent-green); line-height: 1; }
     
+    /* Barras de InBody Estilo Reporte */
+    .inbody-bar-group { margin-bottom: 0.8rem; }
+    .inbody-bar-label { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.2rem; }
+    .inbody-bar-bg { background: #0f172a; height: 14px; border-radius: 7px; border: 1px solid var(--border-color); overflow: hidden; position: relative; }
+    .inbody-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent-blue), var(--accent-green)); width: 0%; transition: width 0.5s ease; }
+
+    .segmental-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.5rem; }
+    .segment-card { background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.6rem; text-align: center; }
+
+    /* Tablas & Gráficos */
     .table-container { overflow-x: auto; margin-top: 1rem; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: center; }
-    th, td { border: 1px solid var(--border-color); padding: 0.6rem; min-width: 90px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: center; }
+    th, td { border: 1px solid var(--border-color); padding: 0.6rem; min-width: 85px; }
     th { background-color: #0f172a; color: var(--accent-blue); }
-    .sticky-col { position: sticky; left: 0; background-color: var(--card-bg); z-index: 5; text-align: left; font-weight: bold; width: 140px; }
+    .sticky-col { position: sticky; left: 0; background-color: var(--card-bg); z-index: 5; text-align: left; font-weight: bold; width: 130px; }
+    .chart-container { position: relative; height: 300px; width: 100%; }
 
-    .chart-container { position: relative; height: 320px; width: 100%; }
-
-    /* Sub-card para agregar nuevos ejercicios */
-    .new-exercise-box {
-      background: #0f172a; border: 1px dashed var(--accent-blue); border-radius: 8px; padding: 1rem; margin-top: 0.5rem; margin-bottom: 1rem; display: none;
-    }
-
-    /* MEJORA 1: Selector de Atleta Activo en Barra Superior */
-    .active-user-container {
-      display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--text-muted);
-    }
-    .active-user-select {
-      background: #0f172a; border: 1px solid var(--border-color); color: var(--accent-blue);
-      border-radius: 6px; padding: 0.25rem 0.5rem; font-weight: bold; outline: none; cursor: pointer;
-    }
-
-    /* MEJORA 2: Estilos para Cronómetro Integrado */
-    .timer-box {
-      background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px;
-      padding: 1rem; margin-bottom: 1.25rem; text-align: center;
-    }
-    .timer-display {
-      font-size: 2.2rem; font-weight: bold; font-family: monospace; color: var(--accent-green);
-      margin: 0.5rem 0; letter-spacing: 2px;
-    }
-    .timer-controls {
-      display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 0.5rem;
-    }
-    .btn-sm {
-      padding: 0.4rem 0.8rem; font-size: 0.85rem; width: auto; border-radius: 6px;
-    }
-
-    /* MEJORA 3: Badge para 1RM Estimado */
-    .rm-display-box {
-      background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px;
-      padding: 0.6rem 1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between;
-    }
+    /* Scanning Overlay */
+    #ocr-loader { display: none; background: rgba(15,23,42,0.85); position: fixed; inset: 0; z-index: 3000; align-items: center; justify-content: center; flex-direction: column; gap: 1rem; backdrop-filter: blur(4px); }
+    .spinner { border: 4px solid var(--border-color); border-top: 4px solid var(--accent-blue); border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
+
+  <!-- Marcador Versión Sistema -->
+  <div class="app-version-badge" id="app-version-tag">v2026.09.1</div>
+
+  <!-- Loader OCR -->
+  <div id="ocr-loader">
+    <div class="spinner"></div>
+    <div style="font-size: 1.1rem; color: var(--accent-blue); font-weight: bold;">Procesando Ficha InBody con OCR...</div>
+    <div id="ocr-status" style="font-size: 0.85rem; color: var(--text-muted);">Extrayendo métricas de composición corporal...</div>
+  </div>
 
   <!-- Barra Superior -->
   <header class="app-bar">
     <button class="btn-menu" id="menu-toggle">☰</button>
     <div class="app-bar-title"><span>🏋️</span> <span id="app-title-text">GymRats</span></div>
     
-    <!-- MEJORA 1: Atleta Activo Global -->
     <div class="active-user-container">
       <span>👤</span>
       <select id="global-active-user" class="active-user-select" onchange="setActiveUser(this.value)">
@@ -164,6 +161,7 @@
     <ul class="drawer-menu">
       <li><a href="#" onclick="navTo('home')">🏠 Menú Principal</a></li>
       <li><a href="#" onclick="navTo('athletes')">👤 Gestión Atletas</a></li>
+      <li><a href="#" onclick="navTo('inbody')">📊 Análisis InBody & OCR</a></li>
       <li><a href="#" onclick="navTo('suspension')">⏱️ Suspensión Dinámica</a></li>
       <li><a href="#" onclick="navTo('leg')">🦵 Rutina Leg (Pierna)</a></li>
       <li><a href="#" onclick="navTo('pull')">🏋️‍♂️ Rutina Pull (Espalda/Bíceps)</a></li>
@@ -177,20 +175,25 @@
     <!-- 1. MENÚ PRINCIPAL -->
     <section id="view-home" class="view-section active">
       <div class="card">
-        <h2>Bienvenido a GymRats 👋</h2>
-        <p style="color: var(--text-muted); margin-top: 0.5rem;">Selecciona el módulo al que deseas ingresar:</p>
+        <h2>Panel de Control - GymRats 👋</h2>
+        <p style="color: var(--text-muted); margin-top: 0.4rem;">Selecciona una opción para comenzar a trabajar:</p>
       </div>
 
       <div class="menu-grid">
         <div class="menu-card" onclick="navTo('athletes')">
           <div class="icon">👤</div>
           <h3>Gestión Atletas</h3>
-          <p>Crear / Editar usuarios</p>
+          <p>Crear y administrar perfiles</p>
+        </div>
+        <div class="menu-card" onclick="navTo('inbody')">
+          <div class="icon">📊</div>
+          <h3>InBody & OCR</h3>
+          <p>Escáner de ficha y métricas</p>
         </div>
         <div class="menu-card" onclick="navTo('suspension')">
           <div class="icon">⏱️</div>
-          <h3>Suspensión Dinámica</h3>
-          <p>Tiempos e Historial</p>
+          <h3>Suspensión</h3>
+          <p>Control de tiempos e historial</p>
         </div>
         <div class="menu-card" onclick="navTo('leg')">
           <div class="icon">🦵</div>
@@ -209,50 +212,143 @@
         </div>
         <div class="menu-card" onclick="navTo('analytics')">
           <div class="icon">📈</div>
-          <h3>Datos y Gráficas</h3>
-          <p>Progreso de Cargas Progresivas</p>
+          <h3>Gráficas Carga</h3>
+          <p>Progreso de sobrecarga</p>
         </div>
       </div>
     </section>
 
-    <!-- 2. GESTIÓN DE ATLETAS -->
+    <!-- 2. ATLETAS -->
     <section id="view-athletes" class="view-section">
       <div class="card">
-        <div class="card-title">👤 Administración de Atletas</div>
+        <div class="card-title">👤 Registro de Atletas</div>
         <form id="user-form">
           <div class="form-group">
             <label>Nombre del Atleta</label>
             <input type="text" id="new-user" class="form-control" placeholder="Ej. Oscar Robles" required>
           </div>
-          <button type="submit" class="btn">＋ Registrar Atleta</button>
+          <button type="submit" class="btn">＋ Guardar Perfil</button>
         </form>
       </div>
 
       <div class="card">
-        <div class="card-title">Atletas Registrados</div>
-        <div id="athletes-container">Cargando atletas...</div>
+        <div class="card-title">Atletas Activos</div>
+        <div id="athletes-container">Cargando perfiles...</div>
       </div>
     </section>
 
-    <!-- 3. SUSPENSIÓN DINÁMICA -->
-    <section id="view-suspension" class="view-section">
-      
-      <!-- MEJORA 2: Cronómetro Directo en Pantalla -->
+    <!-- 3. SECCIÓN INBODY Y OCR -->
+    <section id="view-inbody" class="view-section">
       <div class="card">
-        <div class="card-title">⏱️ Cronómetro / Temporizador Integrado</div>
-        <div class="timer-box">
-          <div class="timer-display" id="chrono-display">00:00.000</div>
-          <div class="timer-controls">
-            <button type="button" class="btn btn-sm" id="btn-start-timer" onclick="startTimer()">▶️ Iniciar</button>
-            <button type="button" class="btn btn-sm btn-secondary" onclick="pauseTimer()">⏸️ Pausa</button>
-            <button type="button" class="btn btn-sm btn-secondary" onclick="resetTimer()">🔄 Reiniciar</button>
-            <button type="button" class="btn btn-sm" style="background: var(--accent-purple); color: white;" onclick="applyTimerToForm()">📌 Usar tiempo en formulario</button>
-          </div>
+        <div class="card-title">
+          <span>📷 Escáner InBody por Cámara / Imagen</span>
+          <button class="btn btn-secondary" style="width: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem;" onclick="document.getElementById('inbody-file-input').click()">📁 Cargar Foto</button>
         </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">Captura o sube la imagen del reporte InBody 270 para extraer automáticamente las métricas mediante visión OCR.</p>
+        <input type="file" id="inbody-file-input" accept="image/*" capture="environment" style="display: none;" onchange="processInBodyImage(event)">
+        <button class="btn btn-purple" onclick="document.getElementById('inbody-file-input').click()">📸 Escanear Hoja InBody</button>
       </div>
 
       <div class="card">
-        <div class="card-title">⏱️ Registro de Tiempos - Suspensión</div>
+        <div class="card-title">📝 Ingreso / Modificación de Datos InBody</div>
+        <form id="inbody-form">
+          <div class="form-row form-group">
+            <div style="flex: 1; min-width: 160px;">
+              <label>Atleta Seleccionado</label>
+              <select id="inbody-user-select" class="form-control" required onchange="renderInBodyProfile()"></select>
+            </div>
+            <div style="flex: 1; min-width: 160px;">
+              <label>Fecha de Evaluación</label>
+              <input type="date" id="inbody-date" class="form-control" required>
+            </div>
+            <div style="flex: 1; min-width: 120px;">
+              <label>Puntuación InBody</label>
+              <input type="number" id="inbody-score" class="form-control" placeholder="79" required>
+            </div>
+          </div>
+
+          <div style="font-size:0.9rem; font-weight:bold; color:var(--accent-blue); margin: 0.8rem 0 0.4rem 0;">Métricas Principales</div>
+          <div class="form-row form-group">
+            <div style="flex: 1;"><label>Peso Total (kg)</label><input type="number" step="0.1" id="inbody-peso" class="form-control" placeholder="71.7" required></div>
+            <div style="flex: 1;"><label>MME (kg)</label><input type="number" step="0.1" id="inbody-mme" class="form-control" placeholder="32.6" required></div>
+            <div style="flex: 1;"><label>Masa Grasa (kg)</label><input type="number" step="0.1" id="inbody-grasa-kg" class="form-control" placeholder="14.5" required></div>
+            <div style="flex: 1;"><label>PGC (% Grasa)</label><input type="number" step="0.1" id="inbody-pgc" class="form-control" placeholder="20.2" required></div>
+          </div>
+
+          <div class="form-row form-group">
+            <div style="flex: 1;"><label>IMC (kg/m²)</label><input type="number" step="0.1" id="inbody-imc" class="form-control" placeholder="24.8"></div>
+            <div style="flex: 1;"><label>Agua Corp Total (L)</label><input type="number" step="0.1" id="inbody-agua" class="form-control" placeholder="42.0"></div>
+            <div style="flex: 1;"><label>Proteínas (kg)</label><input type="number" step="0.1" id="inbody-proteinas" class="form-control" placeholder="11.5"></div>
+            <div style="flex: 1;"><label>Minerales (kg)</label><input type="number" step="0.2" id="inbody-minerales" class="form-control" placeholder="3.69"></div>
+          </div>
+
+          <div style="font-size:0.9rem; font-weight:bold; color:var(--accent-blue); margin: 0.8rem 0 0.4rem 0;">Relaciones y Diagnósticos</div>
+          <div class="form-row form-group">
+            <div style="flex: 1;"><label>Relación Cintura-Cadera</label><input type="number" step="0.01" id="inbody-rcc" class="form-control" placeholder="0.94"></div>
+            <div style="flex: 1;"><label>Nivel Grasa Visceral</label><input type="number" id="inbody-visceral" class="form-control" placeholder="4"></div>
+            <div style="flex: 1;"><label>Tasa Metabólica Basal (kcal)</label><input type="number" id="inbody-tmb" class="form-control" placeholder="1606"></div>
+          </div>
+
+          <button type="submit" class="btn btn-success">💾 Guardar Evaluación InBody</button>
+        </form>
+      </div>
+
+      <!-- VISTA PDF EXPORTABLE -->
+      <div id="inbody-pdf-container">
+        <div class="card" id="inbody-profile-view">
+          <div class="card-title">
+            <span id="inbody-profile-title">📋 Informe de Composición Corporal</span>
+            <button class="btn btn-secondary" style="width: auto; padding: 0.4rem 0.9rem;" onclick="generateInBodyPDF()">📄 Descargar PDF</button>
+          </div>
+
+          <div class="inbody-score-box">
+            <div style="font-size:0.85rem; color:var(--text-muted); font-weight:bold;">PUNTUACIÓN INBODY</div>
+            <div class="inbody-score-val" id="render-score">0 / 100</div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">Refleja la evaluación de la composición corporal total</div>
+          </div>
+
+          <!-- Barras de Músculo-Grasa -->
+          <div style="margin-bottom: 1.2rem;">
+            <div style="font-weight: bold; color: var(--accent-blue); margin-bottom: 0.6rem; font-size: 0.95rem;">Análisis Músculo - Grasa</div>
+            
+            <div class="inbody-bar-group">
+              <div class="inbody-bar-label"><span>Peso Corporal</span><span id="label-peso">0.0 kg</span></div>
+              <div class="inbody-bar-bg"><div class="inbody-bar-fill" id="bar-peso"></div></div>
+            </div>
+
+            <div class="inbody-bar-group">
+              <div class="inbody-bar-label"><span>MME (Masa Músculo Esquelética)</span><span id="label-mme">0.0 kg</span></div>
+              <div class="inbody-bar-bg"><div class="inbody-bar-fill" id="bar-mme" style="background: linear-gradient(90deg, #38bdf8, #a855f7);"></div></div>
+            </div>
+
+            <div class="inbody-bar-group">
+              <div class="inbody-bar-label"><span>Masa Grasa Corporal</span><span id="label-grasa">0.0 kg</span></div>
+              <div class="inbody-bar-bg"><div class="inbody-bar-fill" id="bar-grasa" style="background: linear-gradient(90deg, #fb923c, #f43f5e);"></div></div>
+            </div>
+          </div>
+
+          <!-- Gráficos de Histórico -->
+          <div class="card" style="background: #0f172a; margin-bottom: 1rem;">
+            <div style="font-size:0.9rem; font-weight:bold; color:var(--accent-blue); margin-bottom: 0.5rem;">📈 Histórico de Composición Corporal</div>
+            <div class="chart-container">
+              <canvas id="inbodyHistoryChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card" style="background: #0f172a; margin-bottom: 0;">
+            <div style="font-size:0.9rem; font-weight:bold; color:var(--accent-blue); margin-bottom: 0.5rem;">📊 Evolución de Puntuación InBody</div>
+            <div class="chart-container" style="height: 200px;">
+              <canvas id="inbodyScoreChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. SUSPENSIÓN -->
+    <section id="view-suspension" class="view-section">
+      <div class="card">
+        <div class="card-title">⏱️ Registro de Tiempos - Suspensión Dinámica</div>
         <form id="time-form">
           <div class="form-group">
             <label>Atleta</label>
@@ -289,21 +385,17 @@
         <div class="table-container">
           <table>
             <thead>
-              <tr>
-                <th id="history-super-header" class="sticky-col">INFORMACIÓN DEL ATLETA</th>
-              </tr>
+              <tr><th id="history-super-header" class="sticky-col">INFORMACIÓN DEL ATLETA</th></tr>
               <tr id="table-headers"></tr>
             </thead>
             <tbody id="records-table-body"></tbody>
-            <tfoot>
-              <tr id="table-footer" style="font-weight: bold; background: #0f172a;"></tr>
-            </tfoot>
+            <tfoot><tr id="table-footer" style="font-weight: bold; background: #0f172a;"></tr></tfoot>
           </table>
         </div>
       </div>
     </section>
 
-    <!-- 4. RUTINAS DE CARGA (LEG, PULL, PUSH) -->
+    <!-- 5. RUTINAS DE CARGA -->
     <section id="view-workout" class="view-section">
       <div class="card">
         <div class="card-title" id="workout-title">🏋️ Registro de Sobrecarga</div>
@@ -326,16 +418,15 @@
             </select>
           </div>
 
-          <!-- Caja para registrar un nuevo ejercicio si no está en la lista -->
-          <div id="new-exercise-box" class="new-exercise-box">
+          <div id="new-exercise-box" style="background: #0f172a; border: 1px dashed var(--accent-blue); border-radius: 8px; padding: 1rem; margin: 0.5rem 0 1rem 0; display: none;">
             <div style="font-size: 0.9rem; font-weight: bold; color: var(--accent-blue); margin-bottom: 0.5rem;">Crear Ejercicio Máster</div>
             <div class="form-row">
               <div style="flex: 1.5; min-width: 180px;">
-                <label style="font-size:0.75rem;">Nombre (Ej. Sentadilla Barra / Squat)</label>
-                <input type="text" id="new-exercise-name" class="form-control" placeholder="Ej. Sentadilla Búlgara">
+                <label style="font-size:0.75rem;">Nombre Ejercicio</label>
+                <input type="text" id="new-exercise-name" class="form-control" placeholder="Ej. Press Banca Plano">
               </div>
               <div style="flex: 1; min-width: 150px;">
-                <label style="font-size:0.75rem;">Tipo / Músculo</label>
+                <label style="font-size:0.75rem;">Grupo Muscular</label>
                 <select id="new-exercise-type" class="form-control">
                   <option value="Cuádriceps">Cuádriceps</option>
                   <option value="Isquiotibiales/Glúteos">Isquiotibiales / Glúteos</option>
@@ -344,9 +435,8 @@
                   <option value="Hombro">Hombro</option>
                   <option value="Bíceps">Bíceps</option>
                   <option value="Tríceps">Tríceps</option>
-                  <option value="Calistenia">Calistenia / Peso Corporal</option>
+                  <option value="Calistenia">Calistenia</option>
                   <option value="Polea / Máquina">Polea / Máquina</option>
-                  <option value="Otro">Otro</option>
                 </select>
               </div>
             </div>
@@ -357,24 +447,31 @@
           </div>
 
           <div class="form-row form-group">
-            <div style="flex: 1;">
-              <label>Carga / Peso (lb/kg)</label>
+            <div style="flex: 1.2; min-width: 130px;">
+              <label>Carga / Peso</label>
               <input type="number" step="0.5" id="workout-weight" class="form-control" placeholder="150" oninput="calculate1RM()" required>
             </div>
-            <div style="flex: 1;">
-              <label>Series (Sets)</label>
+            <!-- SELECCIÓN DE DIMENSIONAL SOLICITADA -->
+            <div style="flex: 0.8; min-width: 100px;">
+              <label>Unidad</label>
+              <select id="workout-unit" class="form-control" onchange="calculate1RM()">
+                <option value="lb">lb</option>
+                <option value="kg">kg</option>
+              </select>
+            </div>
+            <div style="flex: 1; min-width: 90px;">
+              <label>Series</label>
               <input type="number" id="workout-sets" class="form-control" placeholder="4" required>
             </div>
-            <div style="flex: 1;">
-              <label>Repeticiones</label>
+            <div style="flex: 1; min-width: 90px;">
+              <label>Reps</label>
               <input type="number" id="workout-reps" class="form-control" placeholder="10" oninput="calculate1RM()" required>
             </div>
           </div>
 
-          <!-- MEJORA 3: Caja de Estimación de 1RM Dinámica -->
-          <div class="rm-display-box">
-            <span style="font-size:0.85rem; color:var(--text-muted);">🔥 Estimación de Carga Máxima (1RM Epley):</span>
-            <span id="calculated-1rm" style="font-weight:bold; color:var(--accent-orange); font-size:1.05rem;">0 lb/kg</span>
+          <div style="background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.6rem 1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size:0.85rem; color:var(--text-muted);">🔥 Estimación de 1RM (Epley):</span>
+            <span id="calculated-1rm" style="font-weight:bold; color:var(--accent-orange); font-size:1.05rem;">0 lb</span>
           </div>
 
           <button type="submit" class="btn">💾 Registrar Carga</button>
@@ -382,7 +479,7 @@
       </div>
 
       <div class="card">
-        <div class="card-title">📋 Cargas Registradas en este Grupo</div>
+        <div class="card-title">📋 Cargas Registradas en este Módulo</div>
         <div class="table-container">
           <table>
             <thead>
@@ -390,7 +487,7 @@
                 <th>Fecha</th>
                 <th>Atleta</th>
                 <th>Ejercicio</th>
-                <th>Tipo</th>
+                <th>Músculo</th>
                 <th>Carga</th>
                 <th>Series</th>
                 <th>Reps</th>
@@ -404,19 +501,19 @@
       </div>
     </section>
 
-    <!-- 5. APARTADO: DATOS Y GRÁFICAS DE PROGRESO POR EJERCICIO -->
+    <!-- 6. ANALÍTICAS -->
     <section id="view-analytics" class="view-section">
       <div class="card">
-        <div class="card-title">📈 Filtros de Progreso de Fuerza</div>
+        <div class="card-title">📈 Filtros de Fuerza y Cargas</div>
         <div class="form-row">
           <div style="flex: 1; min-width: 160px;">
-            <label style="font-size:0.85rem; color:var(--text-muted);">Filtrar por Atleta</label>
+            <label style="font-size:0.85rem; color:var(--text-muted);">Filtrar Atleta</label>
             <select id="analytics-user" class="form-control" onchange="renderAnalytics()"></select>
           </div>
           <div style="flex: 1; min-width: 160px;">
-            <label style="font-size:0.85rem; color:var(--text-muted);">Filtrar por Tipo</label>
+            <label style="font-size:0.85rem; color:var(--text-muted);">Filtrar Músculo</label>
             <select id="analytics-type" class="form-control" onchange="filterAnalyticsExercises()">
-              <option value="ALL">-- Todos los Tipos --</option>
+              <option value="ALL">-- Todos --</option>
               <option value="Cuádriceps">Cuádriceps</option>
               <option value="Isquiotibiales/Glúteos">Isquiotibiales / Glúteos</option>
               <option value="Pecho">Pecho</option>
@@ -424,47 +521,26 @@
               <option value="Hombro">Hombro</option>
               <option value="Bíceps">Bíceps</option>
               <option value="Tríceps">Tríceps</option>
-              <option value="Calistenia">Calistenia</option>
-              <option value="Polea / Máquina">Polea / Máquina</option>
-              <option value="Otro">Otro</option>
             </select>
           </div>
           <div style="flex: 1; min-width: 160px;">
-            <label style="font-size:0.85rem; color:var(--text-muted);">Filtrar por Ejercicio Específico</label>
+            <label style="font-size:0.85rem; color:var(--text-muted);">Filtrar Ejercicio</label>
             <select id="analytics-exercise" class="form-control" onchange="renderAnalytics()">
-              <option value="ALL">-- Todos los Ejercicios --</option>
+              <option value="ALL">-- Todos --</option>
             </select>
           </div>
         </div>
       </div>
 
-      <!-- Métricas Clave -->
-      <div class="kpi-container">
-        <div class="kpi-card">
-          <div style="color: var(--text-muted); font-size:0.85rem;">Carga Máxima Levantada</div>
-          <div class="kpi-value" id="kpi-max-weight">0 lb/kg</div>
-        </div>
-        <div class="kpi-card">
-          <div style="color: var(--text-muted); font-size:0.85rem;">Total de Sesiones Registradas</div>
-          <div class="kpi-value" id="kpi-total-sessions" style="color: var(--accent-blue);">0</div>
-        </div>
-        <div class="kpi-card">
-          <div style="color: var(--text-muted); font-size:0.85rem;">Volumen de Carga Reciente</div>
-          <div class="kpi-value" id="kpi-volume" style="color: var(--accent-purple);">0 lb/kg</div>
-        </div>
-      </div>
-
-      <!-- Gráfica de Fuerza -->
       <div class="card">
-        <div class="card-title">📊 Curva de Sobrecarga Progresiva (Peso Levantado)</div>
+        <div class="card-title">📊 Curva de Sobrecarga Progresiva</div>
         <div class="chart-container">
           <canvas id="workoutChart"></canvas>
         </div>
       </div>
 
-      <!-- Tabla de Datos Filtrada -->
       <div class="card">
-        <div class="card-title">🔍 Detalle de Registros Filtrados</div>
+        <div class="card-title">🔍 Registros Historicos de Carga</div>
         <div class="table-container">
           <table>
             <thead>
@@ -472,11 +548,10 @@
                 <th>Fecha</th>
                 <th>Atleta</th>
                 <th>Ejercicio</th>
-                <th>Tipo</th>
-                <th>Peso / Carga</th>
+                <th>Músculo</th>
+                <th>Carga</th>
                 <th>Series x Reps</th>
                 <th>Est. 1RM</th>
-                <th>Volumen Total</th>
               </tr>
             </thead>
             <tbody id="analytics-table-body"></tbody>
@@ -487,7 +562,7 @@
 
   </main>
 
-  <!-- FIREBASE & LÓGICA DE NEGOCIO -->
+  <!-- LÓGICA DE NEGOCIO & FIREBASE INTEGRATION -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { 
@@ -516,6 +591,7 @@
     let users = [];
     let records = [];
     let workouts = [];
+    let inbodyLogs = [];
     let customExercises = [];
     let currentWorkoutCategory = 'leg';
 
@@ -527,6 +603,7 @@
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('date-input-suspension').value = today;
     document.getElementById('date-input-workout').value = today;
+    document.getElementById('inbody-date').value = today;
 
     // Navegación
     menuToggle.addEventListener('click', () => {
@@ -551,6 +628,10 @@
       } else if (viewKey === 'athletes') {
         document.getElementById('view-athletes').classList.add('active');
         appTitleText.textContent = "Atletas";
+      } else if (viewKey === 'inbody') {
+        document.getElementById('view-inbody').classList.add('active');
+        appTitleText.textContent = "InBody & OCR";
+        renderInBodyProfile();
       } else if (viewKey === 'suspension') {
         document.getElementById('view-suspension').classList.add('active');
         appTitleText.textContent = "Suspensión Dinámica";
@@ -570,7 +651,7 @@
       }
     };
 
-    // Firebase Realtime Listeners
+    // Escuchadores de Firebase Firestore
     onSnapshot(collection(db, "users"), (snapshot) => {
       users = snapshot.docs.map(doc => doc.data().name).sort();
       renderUsers();
@@ -588,13 +669,18 @@
       renderAnalytics();
     });
 
+    onSnapshot(collection(db, "inbody"), (snapshot) => {
+      inbodyLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      renderInBodyProfile();
+    });
+
     onSnapshot(collection(db, "exercises"), (snapshot) => {
       customExercises = snapshot.docs.map(doc => doc.data()).sort((a,b) => a.name.localeCompare(b.name));
       populateExerciseSelect();
       filterAnalyticsExercises();
     });
 
-    // MEJORA 1: Gestión de Atleta Activo (Global)
+    // Gestión del Atleta Activo
     window.setActiveUser = function(userName) {
       if (userName) {
         localStorage.setItem('gymrats_active_user', userName);
@@ -602,19 +688,16 @@
         localStorage.removeItem('gymrats_active_user');
       }
       applyActiveUserToForms();
+      renderInBodyProfile();
     };
 
     function applyActiveUserToForms() {
       const activeUser = localStorage.getItem('gymrats_active_user');
       if (activeUser) {
-        const globalSel = document.getElementById('global-active-user');
-        if (globalSel) globalSel.value = activeUser;
-
-        const selSusp = document.getElementById('select-user-suspension');
-        if (selSusp) selSusp.value = activeUser;
-
-        const selWork = document.getElementById('select-user-workout');
-        if (selWork) selWork.value = activeUser;
+        ['global-active-user', 'select-user-suspension', 'select-user-workout', 'inbody-user-select'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = activeUser;
+        });
       }
     }
 
@@ -623,7 +706,8 @@
         document.getElementById('select-user-suspension'), 
         document.getElementById('select-user-workout'),
         document.getElementById('analytics-user'),
-        document.getElementById('global-active-user')
+        document.getElementById('global-active-user'),
+        document.getElementById('inbody-user-select')
       ];
       selects.forEach((sel, idx) => {
         if (!sel) return;
@@ -646,11 +730,10 @@
       applyActiveUserToForms();
     }
 
-    // Catálogo de Ejercicios
+    // Catálogo Ejercicios
     function populateExerciseSelect() {
       const sel = document.getElementById('workout-exercise-select');
       const currentVal = sel.value;
-      
       sel.innerHTML = `
         <option value="">-- Selecciona Ejercicio --</option>
         <option value="NEW_EXERCISE" style="color: var(--accent-blue); font-weight: bold;">➕ Registrar nuevo ejercicio en el catálogo...</option>
@@ -667,12 +750,7 @@
     }
 
     window.handleExerciseSelectChange = function(val) {
-      const box = document.getElementById('new-exercise-box');
-      if (val === 'NEW_EXERCISE') {
-        box.style.display = 'block';
-      } else {
-        box.style.display = 'none';
-      }
+      document.getElementById('new-exercise-box').style.display = (val === 'NEW_EXERCISE') ? 'block' : 'none';
     };
 
     window.cancelNewExercise = function() {
@@ -684,45 +762,40 @@
       const name = document.getElementById('new-exercise-name').value.trim();
       const type = document.getElementById('new-exercise-type').value;
 
-      if (!name) return alert('Ingresa el nombre del nuevo ejercicio.');
-      
-      const exists = customExercises.some(e => e.name.toLowerCase() === name.toLowerCase());
-      if (exists) return alert('Este ejercicio ya existe en el catálogo.');
-
+      if (!name) return alert('Ingresa el nombre del ejercicio.');
       try {
         await setDoc(doc(db, "exercises", name.toLowerCase().replace(/\s+/g, '_')), { name, type });
         document.getElementById('new-exercise-name').value = '';
         document.getElementById('new-exercise-box').style.display = 'none';
         document.getElementById('workout-exercise-select').value = name;
-      } catch (err) { alert("Error al guardar ejercicio: " + err.message); }
+      } catch (err) { alert("Error: " + err.message); }
     };
 
     // Atletas
     const userForm = document.getElementById('user-form');
-    const newUserInput = document.getElementById('new-user');
-    const athletesContainer = document.getElementById('athletes-container');
-
     userForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = newUserInput.value.trim();
+      const name = document.getElementById('new-user').value.trim();
       if (name && !users.includes(name)) {
         try {
           await setDoc(doc(db, "users", name), { name });
-          newUserInput.value = '';
+          document.getElementById('new-user').value = '';
         } catch (err) { alert("Error: " + err.message); }
       }
     });
 
     function renderUsers() {
+      const athletesContainer = document.getElementById('athletes-container');
       athletesContainer.innerHTML = '';
       users.forEach(u => {
         const row = document.createElement('div');
         row.className = 'athlete-row';
+        row.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:0.6rem 0; border-bottom:1px solid #334155;";
         row.innerHTML = `
           <span>👤 <strong>${u}</strong></span>
           <div>
-            <button class="btn-icon" onclick="window.editUser('${u}')" title="Editar Nombre">✏️</button>
-            <button class="btn-icon" onclick="window.removeUser('${u}')" title="Eliminar Atleta">🗑️</button>
+            <button class="btn-icon" onclick="window.editUser('${u}')">✏️</button>
+            <button class="btn-icon" onclick="window.removeUser('${u}')">🗑️</button>
           </div>
         `;
         athletesContainer.appendChild(row);
@@ -730,92 +803,262 @@
     }
 
     window.editUser = async function(oldName) {
-      const newName = prompt("Ingresa el nuevo nombre para " + oldName + ":", oldName);
+      const newName = prompt("Ingresa el nuevo nombre:", oldName);
       if (newName && newName.trim() !== "" && newName.trim() !== oldName) {
         const cleanNewName = newName.trim();
-        if (users.includes(cleanNewName)) return alert("Ya existe un atleta con ese nombre.");
-
         try {
           await setDoc(doc(db, "users", cleanNewName), { name: cleanNewName });
           await deleteDoc(doc(db, "users", oldName));
-
-          records.filter(r => r.user === oldName).forEach(async r => {
-            await setDoc(doc(db, "records", `${cleanNewName}_${r.date}`), { ...r, user: cleanNewName, id: `${cleanNewName}_${r.date}` });
-            await deleteDoc(doc(db, "records", r.id));
-          });
-
-          workouts.filter(w => w.user === oldName).forEach(async w => {
-            await setDoc(doc(db, "workouts", w.id), { ...w, user: cleanNewName });
-          });
-
-          if (localStorage.getItem('gymrats_active_user') === oldName) {
-            localStorage.setItem('gymrats_active_user', cleanNewName);
-          }
-
-          alert("Nombre actualizado.");
-        } catch (err) { alert("Error al actualizar: " + err.message); }
-      }
-    };
-
-    window.removeUser = async function(userName) {
-      if (confirm(`¿Eliminar a ${userName} y todo su historial?`)) {
-        try {
-          await deleteDoc(doc(db, "users", userName));
-          records.filter(r => r.user === userName).forEach(async r => await deleteDoc(doc(db, "records", r.id)));
-          workouts.filter(w => w.user === userName).forEach(async w => await deleteDoc(doc(db, "workouts", w.id)));
-          if (localStorage.getItem('gymrats_active_user') === userName) {
-            localStorage.removeItem('gymrats_active_user');
-          }
         } catch (err) { alert("Error: " + err.message); }
       }
     };
 
-    // MEJORA 2: Lógica del Cronómetro Integrado
-    let timerInterval = null;
-    let timerStartTime = 0;
-    let timerElapsedTime = 0;
-
-    window.startTimer = function() {
-      if (timerInterval) return;
-      timerStartTime = Date.now() - timerElapsedTime;
-      timerInterval = setInterval(() => {
-        timerElapsedTime = Date.now() - timerStartTime;
-        formatTimerDisplay(timerElapsedTime);
-      }, 10);
+    window.removeUser = async function(userName) {
+      if (confirm(`¿Eliminar a ${userName}?`)) {
+        try {
+          await deleteDoc(doc(db, "users", userName));
+        } catch (err) { alert("Error: " + err.message); }
+      }
     };
 
-    window.pauseTimer = function() {
-      clearInterval(timerInterval);
-      timerInterval = null;
+    // -------------------------------------------------------------
+    // FUNCIONALIDAD OCR INBODY (Tesseract.js)
+    // -------------------------------------------------------------
+    window.processInBodyImage = function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const loader = document.getElementById('ocr-loader');
+      const statusText = document.getElementById('ocr-status');
+      loader.style.display = 'flex';
+
+      Tesseract.recognize(
+        file,
+        'spa+eng',
+        { logger: m => { if (m.status === 'recognizing text') statusText.textContent = `Analizando texto... ${Math.round(m.progress * 100)}%`; } }
+      ).then(({ data: { text } }) => {
+        loader.style.display = 'none';
+        parseInbodyOCR(text);
+      }).catch(err => {
+        loader.style.display = 'none';
+        alert("Error al escanear la imagen. Puedes llenar los campos manualmente.");
+      });
     };
 
-    window.resetTimer = function() {
-      pauseTimer();
-      timerElapsedTime = 0;
-      formatTimerDisplay(0);
-    };
+    function parseInbodyOCR(rawText) {
+      const extractNum = (regex) => {
+        const match = rawText.match(regex);
+        return match ? parseFloat(match[1].replace(',', '.')) : null;
+      };
 
-    function formatTimerDisplay(msTotal) {
-      const mins = Math.floor(msTotal / 60000);
-      const secs = Math.floor((msTotal % 60000) / 1000);
-      const ms = Math.floor((msTotal % 1000));
-      const strMins = String(mins).padStart(2, '0');
-      const strSecs = String(secs).padStart(2, '0');
-      const strMs = String(ms).padStart(3, '0');
-      document.getElementById('chrono-display').textContent = `${strMins}:${strSecs}.${strMs}`;
+      // Expresiones regulares para mapeo de datos de la balanza
+      const peso = extractNum(/Peso\s*\(kg\)\s*(\d+[\.,]\d+)/i) || extractNum(/(\d{2,3}[\.,]\d)\s*kg/i);
+      const mme = extractNum(/MME\s*\(kg\)\s*(\d+[\.,]\d+)/i) || extractNum(/Masa MÚsculo EsquelÉtica\s*(\d+[\.,]\d+)/i);
+      const grasaKg = extractNum(/Masa Grasa Corporal\s*\(kg\)\s*(\d+[\.,]\d+)/i);
+      const pgc = extractNum(/PGC\s*\(\%\)\s*(\d+[\.,]\d+)/i) || extractNum(/Porcentaje de Grasa Corporal\s*(\d+[\.,]\d+)/i);
+      const score = extractNum(/Puntuación InBody\s*(\d+)\/100/i) || extractNum(/(\d{2})\/100\s*Puntos/i);
+
+      if (peso) document.getElementById('inbody-peso').value = peso;
+      if (mme) document.getElementById('inbody-mme').value = mme;
+      if (grasaKg) document.getElementById('inbody-grasa-kg').value = grasaKg;
+      if (pgc) document.getElementById('inbody-pgc').value = pgc;
+      if (score) document.getElementById('inbody-score').value = score;
+
+      alert("Escaneo InBody finalizado. Revisa los campos importados.");
     }
 
-    window.applyTimerToForm = function() {
-      const mins = Math.floor(timerElapsedTime / 60000);
-      const secs = Math.floor((timerElapsedTime % 60000) / 1000);
-      const ms = Math.floor((timerElapsedTime % 1000));
+    // FORMULARIO E HISTORIAL INBODY
+    const inbodyForm = document.getElementById('inbody-form');
+    inbodyForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const user = document.getElementById('inbody-user-select').value;
+      const date = document.getElementById('inbody-date').value;
+      
+      if (!user) return alert("Selecciona un atleta para la evaluación.");
 
-      document.getElementById('minutes').value = mins;
-      document.getElementById('seconds').value = secs;
-      document.getElementById('millis').value = ms;
+      const payload = {
+        user, date,
+        score: parseFloat(document.getElementById('inbody-score').value) || 0,
+        peso: parseFloat(document.getElementById('inbody-peso').value) || 0,
+        mme: parseFloat(document.getElementById('inbody-mme').value) || 0,
+        grasaKg: parseFloat(document.getElementById('inbody-grasa-kg').value) || 0,
+        pgc: parseFloat(document.getElementById('inbody-pgc').value) || 0,
+        imc: parseFloat(document.getElementById('inbody-imc').value) || 0,
+        agua: parseFloat(document.getElementById('inbody-agua').value) || 0,
+        proteinas: parseFloat(document.getElementById('inbody-proteinas').value) || 0,
+        minerales: parseFloat(document.getElementById('inbody-minerales').value) || 0,
+        rcc: parseFloat(document.getElementById('inbody-rcc').value) || 0,
+        visceral: parseInt(document.getElementById('inbody-visceral').value) || 0,
+        tmb: parseInt(document.getElementById('inbody-tmb').value) || 0
+      };
+
+      try {
+        await setDoc(doc(db, "inbody", `${user}_${date}`), payload);
+        alert("Evaluación InBody guardada exitosamente.");
+        renderInBodyProfile();
+      } catch (err) { alert("Error guardando datos: " + err.message); }
+    });
+
+    // RENDERIZADO GRÁFICO E HISTORIAL INBODY
+    const ctxInbodyHist = document.getElementById('inbodyHistoryChart').getContext('2d');
+    let inbodyHistChart = new Chart(ctxInbodyHist, {
+      type: 'line',
+      data: { datasets: [] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          x: { type: 'time', time: { unit: 'day' }, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+          y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+        },
+        plugins: { legend: { labels: { color: '#f8fafc' } } }
+      }
+    });
+
+    const ctxInbodyScore = document.getElementById('inbodyScoreChart').getContext('2d');
+    let inbodyScoreChart = new Chart(ctxInbodyScore, {
+      type: 'line',
+      data: { datasets: [] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          x: { type: 'time', time: { unit: 'day' }, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+          y: { min: 0, max: 100, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    function renderInBodyProfile() {
+      const selectedUser = document.getElementById('inbody-user-select')?.value;
+      if (!selectedUser) return;
+
+      const userLogs = inbodyLogs.filter(l => l.user === selectedUser).sort((a,b) => new Date(a.date) - new Date(b.date));
+      document.getElementById('inbody-profile-title').textContent = `📋 Reporte InBody - ${selectedUser}`;
+
+      if (userLogs.length > 0) {
+        const latest = userLogs[userLogs.length - 1];
+        document.getElementById('render-score').textContent = `${latest.score} / 100`;
+
+        // Llenar Barras del Informe
+        document.getElementById('label-peso').textContent = `${latest.peso} kg`;
+        document.getElementById('bar-peso').style.width = `${Math.min((latest.peso / 100) * 100, 100)}%`;
+
+        document.getElementById('label-mme').textContent = `${latest.mme} kg`;
+        document.getElementById('bar-mme').style.width = `${Math.min((latest.mme / 50) * 100, 100)}%`;
+
+        document.getElementById('label-grasa').textContent = `${latest.grasaKg} kg (${latest.pgc}%)`;
+        document.getElementById('bar-grasa').style.width = `${Math.min((latest.grasaKg / 40) * 100, 100)}%`;
+      }
+
+      // Actualizar Gráficas
+      inbodyHistChart.data.datasets = [
+        { label: 'Peso (kg)', data: userLogs.map(l => ({ x: l.date, y: l.peso })), borderColor: '#38bdf8' },
+        { label: 'MME (kg)', data: userLogs.map(l => ({ x: l.date, y: l.mme })), borderColor: '#4ade80' },
+        { label: 'Grasa (kg)', data: userLogs.map(l => ({ x: l.date, y: l.grasaKg })), borderColor: '#fb923c' }
+      ];
+      inbodyHistChart.update();
+
+      inbodyScoreChart.data.datasets = [{
+        label: 'Puntuación InBody',
+        data: userLogs.map(l => ({ x: l.date, y: l.score })),
+        borderColor: '#a855f7',
+        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+        fill: true
+      }];
+      inbodyScoreChart.update();
+    }
+
+    // EXPORTACIÓN A PDF
+    window.generateInBodyPDF = function() {
+      const element = document.getElementById('inbody-pdf-container');
+      const opt = {
+        margin:       0.5,
+        filename:     `InBody_Reporte_${document.getElementById('inbody-user-select').value}_${today}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(element).save();
     };
 
-    // Suspensión
+    // CALCULO DE 1RM CON SELECCION DE UNIDAD (LB / KG)
+    window.calculate1RM = function() {
+      const weight = parseFloat(document.getElementById('workout-weight').value) || 0;
+      const reps = parseInt(document.getElementById('workout-reps').value) || 0;
+      const unit = document.getElementById('workout-unit').value;
+      let est1RM = 0;
+      if (weight > 0 && reps > 0) {
+        est1RM = Math.round(weight * (1 + (reps / 30)));
+      }
+      document.getElementById('calculated-1rm').textContent = `${est1RM} ${unit}`;
+    };
+
+    // FORMULARIO Y TABLA DE RUTINAS
+    const workoutForm = document.getElementById('workout-form');
+    workoutForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const user = document.getElementById('select-user-workout').value;
+      const date = document.getElementById('date-input-workout').value;
+      const exerciseSel = document.getElementById('workout-exercise-select').value;
+      const weight = parseFloat(document.getElementById('workout-weight').value) || 0;
+      const unit = document.getElementById('workout-unit').value;
+      const sets = parseInt(document.getElementById('workout-sets').value) || 0;
+      const reps = parseInt(document.getElementById('workout-reps').value) || 0;
+      const category = currentWorkoutCategory;
+
+      if (!user) return alert('Selecciona un atleta.');
+      if (!exerciseSel || exerciseSel === 'NEW_EXERCISE') return alert('Selecciona un ejercicio válido.');
+
+      const exerciseObj = customExercises.find(e => e.name === exerciseSel);
+      const type = exerciseObj ? exerciseObj.type : 'General';
+      const est1RM = Math.round(weight * (1 + (reps / 30)));
+
+      const workoutId = `w_${Date.now()}`;
+      try {
+        await setDoc(doc(db, "workouts", workoutId), { user, date, exercise: exerciseSel, type, weight, unit, sets, reps, est1RM, category });
+        document.getElementById('workout-weight').value = '';
+        document.getElementById('workout-sets').value = '';
+        document.getElementById('workout-reps').value = '';
+        document.getElementById('calculated-1rm').textContent = `0 ${unit}`;
+      } catch (err) { alert("Error: " + err.message); }
+    });
+
+    function renderWorkoutTable() {
+      const tbody = document.getElementById('workout-table-body');
+      tbody.innerHTML = '';
+      const filtered = workouts.filter(w => w.category === currentWorkoutCategory).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="color: var(--text-muted);">No hay ejercicios registrados en este módulo.</td></tr>';
+        return;
+      }
+
+      filtered.forEach(w => {
+        const tr = document.createElement('tr');
+        const p = w.date.split('-');
+        const unitDisplay = w.unit || 'lb';
+        tr.innerHTML = `
+          <td>${p[2]}/${p[1]}/${p[0]}</td>
+          <td>👤 ${w.user}</td>
+          <td><strong>${w.exercise}</strong></td>
+          <td><span class="badge" style="background:#334155; color:var(--accent-blue); padding:2px 6px; border-radius:4px;">${w.type || 'General'}</span></td>
+          <td style="color: var(--accent-green); font-weight: bold;">${w.weight} ${unitDisplay}</td>
+          <td>${w.sets}</td>
+          <td>${w.reps}</td>
+          <td style="color: var(--accent-orange); font-weight: bold;">${w.est1RM} ${unitDisplay}</td>
+          <td><button class="btn-icon" onclick="window.deleteWorkout('${w.id}')">🗑️</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    window.deleteWorkout = async function(id) {
+      if (confirm("¿Eliminar este registro de ejercicio?")) {
+        await deleteDoc(doc(db, "workouts", id));
+      }
+    };
+
+    // SUSPENSIÓN
     const timeForm = document.getElementById('time-form');
     timeForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -829,31 +1072,23 @@
       const totalSec = (min * 60) + sec + (ms / 1000);
       if (totalSec <= 0) return alert('Ingresa un tiempo válido.');
 
-      const recordId = `${user}_${date}`;
       try {
-        await setDoc(doc(db, "records", recordId), { user, date, min, sec, ms, totalSec });
+        await setDoc(doc(db, "records", `${user}_${date}`), { user, date, min, sec, ms, totalSec });
         document.getElementById('minutes').value = '0';
         document.getElementById('seconds').value = '0';
         document.getElementById('millis').value = '0';
-        resetTimer();
       } catch (err) { alert("Error: " + err.message); }
     });
 
-    window.deleteRecord = async function(id) {
-      if (confirm("¿Eliminar registro de tiempo?")) {
-        await deleteDoc(doc(db, "records", id));
-      }
-    };
-
-    const ctx = document.getElementById('progressChart').getContext('2d');
-    let chart = new Chart(ctx, {
+    const ctxSusp = document.getElementById('progressChart').getContext('2d');
+    let chartSusp = new Chart(ctxSusp, {
       type: 'line',
       data: { datasets: [] },
       options: {
         responsive: true, maintainAspectRatio: false,
         scales: {
-          x: { type: 'time', time: { unit: 'day', displayFormats: { day: 'dd/MM' } }, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
-          y: { title: { display: true, text: 'Segundos', color: '#94a3b8' }, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+          x: { type: 'time', time: { unit: 'day' }, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+          y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
         },
         plugins: { legend: { labels: { color: '#f8fafc' } } }
       }
@@ -865,154 +1100,38 @@
       const tableBody = document.getElementById('records-table-body');
       const tableFooter = document.getElementById('table-footer');
 
-      tableHeaders.innerHTML = '<th class="sticky-col">Nombre del Atleta</th>';
-      if (uniqueDates.length === 0) { tableHeaders.innerHTML += '<th>Sin Registros</th>'; }
-      else { uniqueDates.forEach(d => { const p = d.split('-'); tableHeaders.innerHTML += `<th>${p[2]}/${p[1]}/${p[0]}</th>`; }); }
+      tableHeaders.innerHTML = '<th class="sticky-col">Atleta</th>';
+      uniqueDates.forEach(d => { const p = d.split('-'); tableHeaders.innerHTML += `<th>${p[2]}/${p[1]}/${p[0]}</th>`; });
 
       tableBody.innerHTML = '';
-      const dateTotals = {}; const dateCounts = {};
-      uniqueDates.forEach(d => { dateTotals[d] = 0; dateCounts[d] = 0; });
-
       users.forEach(u => {
         const tr = document.createElement('tr');
         let rowHTML = `<td class="sticky-col">👤 ${u}</td>`;
-        if (uniqueDates.length === 0) { rowHTML += '<td style="color: var(--text-muted);">-</td>'; } 
-        else {
-          uniqueDates.forEach(d => {
-            const userRec = records.find(r => r.user === u && r.date === d);
-            if (userRec) {
-              dateTotals[d] += userRec.totalSec; dateCounts[d] += 1;
-              rowHTML += `<td><div style="display:flex; align-items:center; justify-content:center; gap:4px;">${userRec.totalSec.toFixed(1)}s <button class="btn-icon" onclick="window.deleteRecord('${userRec.id}')">🗑️</button></div></td>`;
-            } else { rowHTML += `<td style="color: var(--text-muted);">-</td>`; }
-          });
-        }
+        uniqueDates.forEach(d => {
+          const rec = records.find(r => r.user === u && r.date === d);
+          rowHTML += rec ? `<td>${rec.totalSec.toFixed(1)}s</td>` : `<td style="color:var(--text-muted);">-</td>`;
+        });
         tr.innerHTML = rowHTML; tableBody.appendChild(tr);
       });
 
-      let footerHTML = '<td class="sticky-col">Promedio</td>';
-      if (uniqueDates.length === 0) { footerHTML += '<td>-</td>'; } 
-      else {
-        uniqueDates.forEach(d => {
-          footerHTML += `<td>${dateCounts[d] > 0 ? (dateTotals[d] / dateCounts[d]).toFixed(1) + 's' : '-'}</td>`;
-        });
-      }
-      tableFooter.innerHTML = footerHTML;
-
-      chart.data.datasets = users.map((u, i) => {
-        const userRecords = records.filter(r => r.user === u).sort((a, b) => new Date(a.date) - new Date(b.date));
-        return {
-          label: u, data: userRecords.map(r => ({ x: r.date, y: r.totalSec })),
-          borderColor: COLORS[i % COLORS.length], backgroundColor: COLORS[i % COLORS.length], borderWidth: 2
-        };
-      });
-      chart.update();
+      chartSusp.data.datasets = users.map((u, i) => ({
+        label: u,
+        data: records.filter(r => r.user === u).map(r => ({ x: r.date, y: r.totalSec })),
+        borderColor: COLORS[i % COLORS.length]
+      }));
+      chartSusp.update();
     }
 
-    window.exportToCSV = function() {
-      if (records.length === 0) return alert("No hay registros para exportar.");
-      const uniqueDates = [...new Set(records.map(r => r.date))].sort((a, b) => new Date(a) - new Date(b));
-      let csv = "data:text/csv;charset=utf-8, Atleta," + uniqueDates.map(d => `"${d}"`).join(",") + "\n";
-      users.forEach(u => {
-        let row = `"${u}"`;
-        uniqueDates.forEach(d => {
-          const rec = records.find(r => r.user === u && r.date === d);
-          row += `,${rec ? rec.totalSec.toFixed(1) : ''}`;
-        });
-        csv += row + "\n";
-      });
-      const link = document.createElement("a");
-      link.href = encodeURI(csv);
-      link.download = `GymRats_Tiempos_${today}.csv`;
-      link.click();
-    };
-
-    // MEJORA 3: Cálculo Dinámico de 1RM (Fórmula Epley)
-    window.calculate1RM = function() {
-      const weight = parseFloat(document.getElementById('workout-weight').value) || 0;
-      const reps = parseInt(document.getElementById('workout-reps').value) || 0;
-      let est1RM = 0;
-      if (weight > 0 && reps > 0) {
-        est1RM = Math.round(weight * (1 + (reps / 30)));
-      }
-      document.getElementById('calculated-1rm').textContent = `${est1RM} lb/kg`;
-    };
-
-    // Workout Cargas
-    const workoutForm = document.getElementById('workout-form');
-    workoutForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const user = document.getElementById('select-user-workout').value;
-      const date = document.getElementById('date-input-workout').value;
-      const exerciseSel = document.getElementById('workout-exercise-select').value;
-      const weight = parseFloat(document.getElementById('workout-weight').value) || 0;
-      const sets = parseInt(document.getElementById('workout-sets').value) || 0;
-      const reps = parseInt(document.getElementById('workout-reps').value) || 0;
-      const category = currentWorkoutCategory;
-
-      if (!user) return alert('Selecciona un atleta.');
-      if (!exerciseSel || exerciseSel === 'NEW_EXERCISE') return alert('Selecciona un ejercicio válido de la lista.');
-
-      const exerciseObj = customExercises.find(e => e.name === exerciseSel);
-      const type = exerciseObj ? exerciseObj.type : 'General';
-      const est1RM = Math.round(weight * (1 + (reps / 30)));
-
-      const workoutId = `w_${Date.now()}`;
-      try {
-        await setDoc(doc(db, "workouts", workoutId), { user, date, exercise: exerciseSel, type, weight, sets, reps, est1RM, category });
-        document.getElementById('workout-exercise-select').value = '';
-        document.getElementById('workout-weight').value = '';
-        document.getElementById('workout-sets').value = '';
-        document.getElementById('workout-reps').value = '';
-        document.getElementById('calculated-1rm').textContent = '0 lb/kg';
-      } catch (err) { alert("Error: " + err.message); }
-    });
-
-    function renderWorkoutTable() {
-      const tbody = document.getElementById('workout-table-body');
-      tbody.innerHTML = '';
-      const filtered = workouts.filter(w => w.category === currentWorkoutCategory)
-                               .sort((a,b) => new Date(b.date) - new Date(a.date));
-
-      if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="color: var(--text-muted);">No hay ejercicios registrados en este grupo.</td></tr>';
-        return;
-      }
-
-      filtered.forEach(w => {
-        const tr = document.createElement('tr');
-        const p = w.date.split('-');
-        const calculatedRM = w.est1RM || Math.round(w.weight * (1 + (w.reps / 30)));
-        tr.innerHTML = `
-          <td>${p[2]}/${p[1]}/${p[0]}</td>
-          <td>👤 ${w.user}</td>
-          <td><strong>${w.exercise}</strong></td>
-          <td><span class="badge">${w.type || 'General'}</span></td>
-          <td style="color: var(--accent-green); font-weight: bold;">${w.weight} lb/kg</td>
-          <td>${w.sets}</td>
-          <td>${w.reps}</td>
-          <td style="color: var(--accent-orange); font-weight: bold;">${calculatedRM} lb/kg</td>
-          <td><button class="btn-icon" onclick="window.deleteWorkout('${w.id}')">🗑️</button></td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    window.deleteWorkout = async function(id) {
-      if (confirm("¿Eliminar este registro de ejercicio?")) {
-        await deleteDoc(doc(db, "workouts", id));
-      }
-    };
-
-    // --- ANALÍTICAS Y GRÁFICAS DE CARGA ---
-    const ctxWorkout = document.getElementById('workoutChart').getContext('2d');
-    let workoutChart = new Chart(ctxWorkout, {
+    // ANALÍTICAS
+    const ctxAnalytics = document.getElementById('workoutChart').getContext('2d');
+    let workoutChart = new Chart(ctxAnalytics, {
       type: 'line',
       data: { datasets: [] },
       options: {
         responsive: true, maintainAspectRatio: false,
         scales: {
-          x: { type: 'time', time: { unit: 'day', displayFormats: { day: 'dd/MM' } }, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
-          y: { title: { display: true, text: 'Carga (lb/kg)', color: '#94a3b8' }, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+          x: { type: 'time', time: { unit: 'day' }, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+          y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
         },
         plugins: { legend: { labels: { color: '#f8fafc' } } }
       }
@@ -1024,17 +1143,13 @@
       if (!exSelect) return;
 
       exSelect.innerHTML = '<option value="ALL">-- Todos los Ejercicios --</option>';
-      const filteredEx = selectedType === 'ALL' 
-        ? customExercises 
-        : customExercises.filter(e => e.type === selectedType);
-
+      const filteredEx = selectedType === 'ALL' ? customExercises : customExercises.filter(e => e.type === selectedType);
       filteredEx.forEach(e => {
         const opt = document.createElement('option');
         opt.value = e.name;
         opt.textContent = e.name;
         exSelect.appendChild(opt);
       });
-
       renderAnalytics();
     };
 
@@ -1050,57 +1165,37 @@
 
       filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-      // Métricas KPI
-      const maxWeight = filtered.length > 0 ? Math.max(...filtered.map(w => w.weight)) : 0;
-      const totalSessions = filtered.length;
-      const totalVolume = filtered.reduce((acc, w) => acc + (w.weight * w.sets * w.reps), 0);
-
-      document.getElementById('kpi-max-weight').textContent = `${maxWeight} lb/kg`;
-      document.getElementById('kpi-total-sessions').textContent = totalSessions;
-      document.getElementById('kpi-volume').textContent = `${totalVolume.toLocaleString()} lb/kg`;
-
-      // Tabla
       const tbody = document.getElementById('analytics-table-body');
       tbody.innerHTML = '';
       if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="color: var(--text-muted);">Sin datos registrados para los filtros seleccionados.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="color: var(--text-muted);">Sin datos para mostrar.</td></tr>';
       } else {
         [...filtered].reverse().forEach(w => {
           const tr = document.createElement('tr');
           const p = w.date.split('-');
-          const vol = w.weight * w.sets * w.reps;
-          const calculatedRM = w.est1RM || Math.round(w.weight * (1 + (w.reps / 30)));
+          const unitDisplay = w.unit || 'lb';
           tr.innerHTML = `
             <td>${p[2]}/${p[1]}/${p[0]}</td>
             <td>👤 ${w.user}</td>
             <td><strong>${w.exercise}</strong></td>
-            <td><span class="badge">${w.type || 'General'}</span></td>
-            <td style="color: var(--accent-green); font-weight: bold;">${w.weight} lb/kg</td>
+            <td><span class="badge" style="background:#334155; color:var(--accent-blue); padding:2px 6px; border-radius:4px;">${w.type || 'General'}</span></td>
+            <td style="color: var(--accent-green); font-weight: bold;">${w.weight} ${unitDisplay}</td>
             <td>${w.sets} x ${w.reps}</td>
-            <td style="color: var(--accent-orange); font-weight: bold;">${calculatedRM} lb/kg</td>
-            <td style="color: var(--accent-purple);">${vol} lb/kg</td>
+            <td style="color: var(--accent-orange); font-weight: bold;">${w.est1RM} ${unitDisplay}</td>
           `;
           tbody.appendChild(tr);
         });
       }
 
-      // Gráfica
       let activeUsers = selectedUser === 'ALL' ? users : [selectedUser];
-      workoutChart.data.datasets = activeUsers.map((u, i) => {
-        const uWorkouts = filtered.filter(w => w.user === u);
-        return {
-          label: u,
-          data: uWorkouts.map(w => ({ x: w.date, y: w.weight })),
-          borderColor: COLORS[i % COLORS.length],
-          backgroundColor: COLORS[i % COLORS.length],
-          borderWidth: 2,
-          tension: 0.2
-        };
-      }).filter(d => d.data.length > 0);
+      workoutChart.data.datasets = activeUsers.map((u, i) => ({
+        label: u,
+        data: filtered.filter(w => w.user === u).map(w => ({ x: w.date, y: w.weight })),
+        borderColor: COLORS[i % COLORS.length]
+      })).filter(d => d.data.length > 0);
 
       workoutChart.update();
     };
-
   </script>
 </body>
 </html>
