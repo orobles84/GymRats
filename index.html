@@ -4,126 +4,173 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GymRats - Tracker & InBody OCR</title>
-    <!-- Chart.js para Gráficas -->
+
+    <!-- Librerías Externas -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Tesseract.js para OCR por cámara/imagen -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-    <!-- html2pdf.js para Exportación de PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
+    <!-- Firebase SDK (v9 Modular Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
-            --primary: #1e293b;
-            --accent: #2563eb;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text: #0f172a;
-            --border: #e2e8f0;
+            --bg-dark: #0f172a;
+            --card-dark: #1e293b;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-
-        header {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
             display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 260px;
+            background-color: var(--card-dark);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
             justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-        }
-
-        .version-badge {
-            font-size: 0.85rem;
-            background-color: #e0e7ff;
-            color: #3730a3;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-weight: bold;
-        }
-
-        .card {
-            background: var(--card);
-            border-radius: 8px;
             padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border: 1px solid var(--border);
         }
 
-        h2 { margin-top: 0; color: var(--primary); }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
-
-        input, select, button {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 1rem;
-        }
-
-        button {
-            background-color: var(--accent);
-            color: white;
-            border: none;
-            cursor: pointer;
+        .brand {
+            font-size: 1.5rem;
             font-weight: bold;
-            transition: background 0.2s;
-        }
-
-        button:hover {
-            background-color: #1d4ed8;
-        }
-
-        .btn-secondary {
-            background-color: #64748b;
-        }
-        .btn-secondary:hover {
-            background-color: #475569;
-        }
-
-        .unit-toggle {
+            color: var(--accent);
             display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .menu-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
             gap: 10px;
         }
 
-        .unit-toggle label {
-            flex: 1;
-            text-align: center;
-            background: #f1f5f9;
-            padding: 10px;
-            border-radius: 6px;
+        .menu-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            width: 100%;
+            padding: 12px 15px;
+            text-align: left;
+            border-radius: 8px;
             cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .menu-btn:hover, .menu-btn.active {
+            background-color: rgba(59, 130, 246, 0.15);
+            color: var(--accent);
+        }
+
+        .version-tag {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: rgba(255,255,255,0.05);
+            padding: 6px 12px;
+            border-radius: 20px;
+            text-align: center;
             border: 1px solid var(--border);
         }
 
-        .unit-toggle input[type="radio"] {
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .user-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        select, input, button {
+            background-color: var(--card-dark);
+            border: 1px solid var(--border);
+            color: var(--text-light);
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--accent);
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-danger { background-color: var(--danger); border: none; }
+
+        /* Section Layouts */
+        .section-view {
             display: none;
         }
 
-        .unit-toggle input[type="radio"]:checked + span {
-            font-weight: bold;
-            color: var(--accent);
+        .section-view.active {
+            display: block;
+        }
+
+        .card {
+            background-color: var(--card-dark);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card h2, .card h3 {
+            margin-bottom: 15px;
+            color: var(--text-light);
         }
 
         .grid-2 {
@@ -132,526 +179,785 @@
             gap: 15px;
         }
 
-        @media(max-width: 768px) {
-            .grid-2 { grid-template-columns: 1fr; }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
         }
 
+        @media(max-width: 900px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        }
+
+        /* Forms */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+
+        .unit-toggle-group {
+            display: flex;
+            background-color: var(--bg-dark);
+            padding: 4px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .unit-toggle-group label {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+
+        .unit-toggle-group input[type="radio"] { display: none; }
+
+        .unit-toggle-group input[type="radio"]:checked + span {
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        /* Tables */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin-top: 15px;
         }
 
         th, td {
+            padding: 12px;
             text-align: left;
-            padding: 10px;
             border-bottom: 1px solid var(--border);
         }
 
-        th { background-color: #f1f5f9; }
-
-        .chart-container {
-            position: relative;
-            height: 300px;
-            margin-bottom: 20px;
+        th {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
         }
 
-        #ocr-status {
-            font-weight: bold;
-            color: var(--accent);
+        .chart-box {
+            position: relative;
+            height: 320px;
+            width: 100%;
+        }
+
+        .ocr-alert {
             margin-top: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background-color: rgba(59, 130, 246, 0.1);
+            color: var(--accent);
+            border: 1px solid var(--accent);
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <header>
+    <!-- Sidebar Lateral -->
+    <aside class="sidebar">
         <div>
-            <h1>GymRats Fitness Tracker</h1>
-            <p>Control de Rutinas y Registro InBody</p>
+            <div class="brand">
+                🏋️‍♂️ GymRats App
+            </div>
+            <ul class="menu-list">
+                <li><button class="menu-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button></li>
+                <li><button class="menu-btn" onclick="switchTab('routines')">💪 Rutinas & Pesos</button></li>
+                <li><button class="menu-btn" onclick="switchTab('suspension')">⏱️ Suspensiones</button></li>
+                <li><button class="menu-btn" onclick="switchTab('inbody')">🩺 InBody OCR</button></li>
+                <li><button class="menu-btn" onclick="switchTab('analytics')">📈 Analíticas</button></li>
+                <li><button class="menu-btn" onclick="switchTab('users')">👥 Gestión Atletas</button></li>
+            </ul>
         </div>
-        <div>
-            <!-- Código de Versión según regla de actualización -->
-            <span class="version-badge" id="app-version">v2026.09.1</span>
+        <!-- Código de Versión dinámico acorde a año.mes.versión -->
+        <div class="version-tag" id="app-version-tag">
+            v2026.09.1
         </div>
-    </header>
+    </aside>
 
-    <!-- Selección / Creación de Usuario -->
-    <div class="card">
-        <h2>Perfil de Usuario</h2>
-        <div class="grid-2">
-            <div class="form-group">
-                <label for="user-select">Seleccionar Usuario</label>
-                <select id="user-select" onchange="loadUserData()">
-                    <option value="">-- Seleccionar --</option>
+    <!-- Área Principal de Contenido -->
+    <main class="main-content">
+        <!-- Barra Superior de Usuario Activo -->
+        <header class="top-bar">
+            <h1 id="page-title">Dashboard General</h1>
+            <div class="user-selector">
+                <label for="active-user-select" style="color: var(--text-muted);">Atleta:</label>
+                <select id="active-user-select" onchange="changeActiveUser()">
+                    <option value="">Cargando Atletas...</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label for="new-user-name">Nuevo Usuario</label>
-                <div style="display:flex; gap:10px;">
-                    <input type="text" id="new-user-name" placeholder="Nombre completo">
-                    <button style="width: auto;" onclick="createUser()">Crear</button>
+        </header>
+
+        <!-- PESTAÑA 1: DASHBOARD -->
+        <section id="tab-dashboard" class="section-view active">
+            <div class="grid-3">
+                <div class="card">
+                    <h3>Último InBody Score</h3>
+                    <p id="dash-inbody-score" style="font-size: 2.5rem; font-weight: bold; color: var(--accent);">-- / 100</p>
+                </div>
+                <div class="card">
+                    <h3>Peso Corporal</h3>
+                    <p id="dash-weight" style="font-size: 2.5rem; font-weight: bold;">-- kg</p>
+                </div>
+                <div class="card">
+                    <h3>Total Entrenamientos</h3>
+                    <p id="dash-routines-count" style="font-size: 2.5rem; font-weight: bold;">0</p>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Módulo 1: Registro de Rutina con Selección de Dimensional -->
-    <div class="card">
-        <h2>Registro de Entrenamiento / Rutina</h2>
-        <form id="routine-form" onsubmit="saveRoutine(event)">
-            <div class="grid-2">
-                <div class="form-group">
-                    <label for="exercise-name">Ejercicio / Rutina</label>
-                    <input type="text" id="exercise-name" placeholder="Ej. Pres de Banca, Sentadilla" required>
+            <div class="card" id="export-pdf-area">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>Resumen de Composición y Progreso</h2>
+                    <button class="btn-primary" onclick="downloadPdfSummary()">📄 Exportar Informe PDF</button>
                 </div>
+                <div class="chart-box" style="margin-top: 15px;">
+                    <canvas id="dashOverviewChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- PESTAÑA 2: RUTINAS & PESOS -->
+        <section id="tab-routines" class="section-view">
+            <div class="card">
+                <h2>Registrar Sesión de Entrenamiento</h2>
+                <form id="routine-form" onsubmit="handleSaveRoutine(event)">
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Enfoque / Grupo Muscular</label>
+                            <select id="routine-type" required>
+                                <option value="Push">Push (Pecho/Hombro/Tríceps)</option>
+                                <option value="Pull">Pull (Espalda/Bíceps)</option>
+                                <option value="Leg">Leg (Pierna/Core)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Nombre del Ejercicio</label>
+                            <input type="text" id="exercise-name" placeholder="Ej. Press Banca, Sentadilla" required>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Unidad de Peso</label>
+                            <div class="unit-toggle-group">
+                                <label><input type="radio" name="weight-dim" value="lb" checked> <span>Libras (lb)</span></label>
+                                <label><input type="radio" name="weight-dim" value="kg"> <span>Kilogramos (kg)</span></label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Peso Cargado</label>
+                            <input type="number" step="0.5" id="weight-value" placeholder="0.0" required>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Series y Repeticiones</label>
+                            <input type="text" id="reps-detail" placeholder="Ej. 4 series x 12 reps" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de Entrenamiento</label>
+                            <input type="date" id="routine-date" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">Guardar Registro de Ejercicio</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3>Histórico de Cargas</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Bloque</th>
+                            <th>Ejercicio</th>
+                            <th>Carga Registrada</th>
+                            <th>Series x Reps</th>
+                        </tr>
+                    </thead>
+                    <tbody id="routine-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- PESTAÑA 3: SUSPENSIONES DINÁMICAS -->
+        <section id="tab-suspension" class="section-view">
+            <div class="card">
+                <h2>Cronómetro & Registro de Suspensión</h2>
+                <div class="grid-2">
+                    <div style="text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                        <span id="timer-display" style="font-size: 4rem; font-weight: bold; color: var(--accent);">00:00.0</span>
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            <button class="btn-primary" onclick="startTimer()">Iniciar</button>
+                            <button class="btn-primary" style="background-color: #eab308;" onclick="stopTimer()">Detener</button>
+                            <button class="btn-danger" onclick="resetTimer()">Reiniciar</button>
+                        </div>
+                    </div>
+
+                    <form id="suspension-form" onsubmit="handleSaveSuspension(event)">
+                        <div class="form-group">
+                            <label>Tiempo Obtenido (Segundos)</label>
+                            <input type="number" step="0.1" id="suspension-time" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo de Agarre / Regleta</label>
+                            <input type="text" id="suspension-type" placeholder="Ej. Regleta 20mm, Bidedo" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Lastre Adicional (opcional)</label>
+                            <input type="number" step="0.5" id="suspension-weight" placeholder="0 lb/kg">
+                        </div>
+                        <button type="submit" class="btn-primary">Guardar Registro de Suspensión</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Historial de Suspensiones</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Tiempo</th>
+                            <th>Agarre</th>
+                            <th>Lastre</th>
+                        </tr>
+                    </thead>
+                    <tbody id="suspension-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- PESTAÑA 4: INBODY OCR -->
+        <section id="tab-inbody" class="section-view">
+            <div class="card">
+                <h2>Módulo InBody 270 - Escaneo OCR & Digitalización</h2>
                 <div class="form-group">
-                    <label>Dimensional del Peso</label>
-                    <div class="unit-toggle">
-                        <label>
-                            <input type="radio" name="weight-unit" value="lb" checked>
-                            <span>Libras (lb)</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="weight-unit" value="kg">
-                            <span>Kilogramos (kg)</span>
-                        </label>
+                    <label>Escanear Hoja InBody (Subir Foto / Captura Cámara)</label>
+                    <input type="file" id="inbody-image-file" accept="image/*" onchange="processInbodyOCR(event)">
+                    <div id="ocr-status-message" class="ocr-alert" style="display:none;"></div>
+                </div>
+
+                <hr style="border-color: var(--border); margin: 20px 0;">
+
+                <form id="inbody-data-form" onsubmit="handleSaveInbody(event)">
+                    <div class="grid-3">
+                        <div class="form-group">
+                            <label>Fecha del Test</label>
+                            <input type="date" id="ib-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Puntuación InBody (/100)</label>
+                            <input type="number" id="ib-score" placeholder="79" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Peso Corporal (kg)</label>
+                            <input type="number" step="0.1" id="ib-weight" placeholder="71.7" required>
+                        </div>
+                    </div>
+
+                    <div class="grid-3">
+                        <div class="form-group">
+                            <label>MME - Músculo (kg)</label>
+                            <input type="number" step="0.1" id="ib-mme" placeholder="32.6" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Masa Grasa (kg)</label>
+                            <input type="number" step="0.1" id="ib-fat" placeholder="14.5" required>
+                        </div>
+                        <div class="form-group">
+                            <label>PGC - Grasa (%)</label>
+                            <input type="number" step="0.1" id="ib-pgc" placeholder="20.2" required>
+                        </div>
+                    </div>
+
+                    <div class="grid-3">
+                        <div class="form-group">
+                            <label>IMC (kg/m²)</label>
+                            <input type="number" step="0.1" id="ib-imc" placeholder="24.8" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Grasa Visceral</label>
+                            <input type="number" id="ib-visceral" placeholder="6" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Agua Corporal Total (L)</label>
+                            <input type="number" step="0.1" id="ib-water" placeholder="42.0">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="width: 100%;">Guardar Registro InBody</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3>Histórico Composición Corporal</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Score</th>
+                            <th>Peso (kg)</th>
+                            <th>MME (kg)</th>
+                            <th>PGC (%)</th>
+                            <th>IMC</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inbody-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- PESTAÑA 5: ANALÍTICAS -->
+        <section id="tab-analytics" class="section-view">
+            <div class="card">
+                <h2>Evolución de Composición y Cargas</h2>
+                <div class="chart-box">
+                    <canvas id="analyticsChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- PESTAÑA 6: GESTIÓN DE ATLETAS -->
+        <section id="tab-users" class="section-view">
+            <div class="card">
+                <h2>Gestión de Atletas / Perfiles</h2>
+                <div class="form-group">
+                    <label>Nombre Completo del Nuevo Atleta</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="new-user-name" placeholder="Ej. Oscar Robles">
+                        <button class="btn-primary" onclick="handleCreateUser()">Crear Perfil</button>
                     </div>
                 </div>
             </div>
-            <div class="grid-2">
-                <div class="form-group">
-                    <label for="weight-value">Peso Cargado</label>
-                    <input type="number" step="0.1" id="weight-value" placeholder="0.0" required>
-                </div>
-                <div class="form-group">
-                    <label for="reps-value">Repeticiones / Series</label>
-                    <input type="text" id="reps-value" placeholder="Ej. 4 series x 10 reps" required>
-                </div>
+
+            <div class="card">
+                <h3>Atletas Registrados</h3>
+                <ul id="users-list-container" style="list-style: none; padding: 0;"></ul>
             </div>
-            <button type="submit">Guardar Ejercicio</button>
-        </form>
+        </section>
+    </main>
 
-        <h3 style="margin-top:20px;">Historial de Ejercicios</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Ejercicio</th>
-                    <th>Peso Registrado</th>
-                    <th>Detalles</th>
-                </tr>
-            </thead>
-            <tbody id="routine-history-body">
-                <!-- Se llena dinámicamente -->
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Módulo 2: InBody OCR & Registro Manual -->
-    <div class="card">
-        <h2>Registro de Composición Corporal (InBody)</h2>
-        
-        <div class="form-group">
-            <label for="inbody-file">Escanear Hoja InBody (Cámara / Imagen OCR)</label>
-            <input type="file" id="inbody-file" accept="image/*" onchange="processInBodyOCR(event)">
-            <div id="ocr-status"></div>
-        </div>
-
-        <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border);">
-
-        <form id="inbody-form" onsubmit="saveInBodyData(event)">
-            <div class="grid-2">
-                <div class="form-group">
-                    <label for="ib-date">Fecha de Prueba</label>
-                    <input type="date" id="ib-date" required>
-                </div>
-                <div class="form-group">
-                    <label for="ib-score">Puntuación InBody (/100)</label>
-                    <input type="number" id="ib-score" placeholder="79" required>
-                </div>
-            </div>
-            <div class="grid-2">
-                <div class="form-group">
-                    <label for="ib-weight">Peso (kg)</label>
-                    <input type="number" step="0.1" id="ib-weight" required>
-                </div>
-                <div class="form-group">
-                    <label for="ib-mme">Masa Muscular Esquelética - MME (kg)</label>
-                    <input type="number" step="0.1" id="ib-mme" required>
-                </div>
-            </div>
-            <div class="grid-2">
-                <div class="form-group">
-                    <label for="ib-fat">Masa Grasa Corporal (kg)</label>
-                    <input type="number" step="0.1" id="ib-fat" required>
-                </div>
-                <div class="form-group">
-                    <label for="ib-pgc">Porcentaje de Grasa Corporal - PGC (%)</label>
-                    <input type="number" step="0.1" id="ib-pgc" required>
-                </div>
-            </div>
-            <div class="grid-2">
-                <div class="form-group">
-                    <label for="ib-imc">IMC (kg/m²)</label>
-                    <input type="number" step="0.1" id="ib-imc" required>
-                </div>
-                <div class="form-group">
-                    <label for="ib-visceral">Nivel de Grasa Visceral</label>
-                    <input type="number" id="ib-visceral" required>
-                </div>
-            </div>
-            <button type="submit">Guardar Registro InBody</button>
-        </form>
-    </div>
-
-    <!-- Módulo 3: Visualización de Gráficas y Generación de PDF -->
-    <div class="card" id="pdf-report-area">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h2>Histórico e Informes de Composición Corporal</h2>
-            <button class="btn-secondary" style="width:auto;" onclick="generatePDF()">Descargar PDF Histórico</button>
-        </div>
-
-        <div class="chart-container">
-            <canvas id="inbodyChart"></canvas>
-        </div>
-
-        <h3>Historial InBody Registrado</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Puntuación</th>
-                    <th>Peso (kg)</th>
-                    <th>MME (kg)</th>
-                    <th>PGC (%)</th>
-                    <th>IMC</th>
-                    <th>Acción</th>
-                </tr>
-            </thead>
-            <tbody id="inbody-history-body">
-                <!-- Se llena dinámicamente -->
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<script>
-    // Inicialización de la base de datos local
-    let appData = JSON.parse(localStorage.getItem('gymrats_db')) || {
-        users: {},
-        activeUser: null
-    };
-
-    let chartInstance = null;
-
-    window.onload = function() {
-        populateUserDropdown();
-        if (appData.activeUser) {
-            document.getElementById('user-select').value = appData.activeUser;
-            loadUserData();
-        }
-    };
-
-    function saveData() {
-        localStorage.setItem('gymrats_db', JSON.stringify(appData));
-    }
-
-    function createUser() {
-        const nameInput = document.getElementById('new-user-name');
-        const name = nameInput.value.trim();
-        if (!name) return alert('Ingrese un nombre válido');
-
-        if (!appData.users[name]) {
-            appData.users[name] = {
-                routines: [],
-                inbody: []
-            };
-            appData.activeUser = name;
-            saveData();
-            populateUserDropdown();
-            document.getElementById('user-select').value = name;
-            loadUserData();
-            nameInput.value = '';
-        } else {
-            alert('El usuario ya existe');
-        }
-    }
-
-    function populateUserDropdown() {
-        const select = document.getElementById('user-select');
-        select.innerHTML = '<option value="">-- Seleccionar --</option>';
-        Object.keys(appData.users).forEach(user => {
-            const opt = document.createElement('option');
-            opt.value = user;
-            opt.textContent = user;
-            select.appendChild(opt);
-        });
-    }
-
-    function loadUserData() {
-        const selected = document.getElementById('user-select').value;
-        appData.activeUser = selected;
-        saveData();
-
-        if (!selected) return;
-
-        renderRoutines();
-        renderInBody();
-    }
-
-    // --- MANEJO DE RUTINAS ---
-    function saveRoutine(e) {
-        e.preventDefault();
-        const user = appData.activeUser;
-        if (!user) return alert('Por favor seleccione un usuario');
-
-        const name = document.getElementById('exercise-name').value;
-        const weight = parseFloat(document.getElementById('weight-value').value);
-        const unitRadios = document.getElementsByName('weight-unit');
-        let unit = 'lb';
-        for (let r of unitRadios) {
-            if (r.checked) unit = r.value;
-        }
-        const reps = document.getElementById('reps-value').value;
-
-        const entry = {
-            id: Date.now(),
-            date: new Date().toLocaleDateString(),
-            name,
-            weight,
-            unit,
-            reps
+    <!-- Script Lógica Principal JavaScript -->
+    <script>
+        // CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE Y LOCALSTORAGE
+        const firebaseConfig = {
+            apiKey: "AIzaSyDummyKey_GymRats2026",
+            authDomain: "gymrats-app.firebaseapp.com",
+            projectId: "gymrats-app",
+            storageBucket: "gymrats-app.appspot.com",
+            messagingSenderId: "00000000000",
+            appId: "1:00000000000:web:00000000000"
         };
 
-        appData.users[user].routines.unshift(entry);
-        saveData();
-        renderRoutines();
-        document.getElementById('routine-form').reset();
-    }
-
-    function renderRoutines() {
-        const user = appData.activeUser;
-        const tbody = document.getElementById('routine-history-body');
-        tbody.innerHTML = '';
-
-        if (!user || !appData.users[user]) return;
-
-        appData.users[user].routines.forEach(r => {
-            const tr = document.createElement('tr');
-            // Manejo defensivo para datos antiguos sin dimensional
-            const unitDisplay = r.unit ? r.unit : '<span style="color:red;">sin dim. (editar)</span>';
-            tr.innerHTML = `
-                <td>${r.date}</td>
-                <td>${r.name}</td>
-                <td><strong>${r.weight} ${unitDisplay}</strong></td>
-                <td>${r.reps}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    // --- OCR PARA INBODY ---
-    async function processInBodyOCR(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const status = document.getElementById('ocr-status');
-        status.textContent = "Procesando imagen con OCR... Espere por favor.";
-
+        let db = null;
         try {
-            const worker = await Tesseract.createWorker('spa');
-            const ret = await worker.recognize(file);
-            await worker.terminate();
-
-            status.textContent = "Procesamiento OCR completado. Verifique los datos extraídos.";
-            parseInBodyText(ret.data.text);
-        } catch (err) {
-            console.error(err);
-            status.textContent = "Error al procesar la imagen.";
-        }
-    }
-
-    function parseInBodyText(text) {
-        // Exclusión implícita de 'Gasto calórico del ejercicio' al buscar patrones específicos
-        const scoreMatch = text.match(/(\d{2,3})\s*\/\s*100\s*Puntos/i) || text.match(/Puntuaci[oó]n\s*InBody\s*(\d{2,3})/i);
-        const weightMatch = text.match(/Peso\s*\(kg\)\s*(\d{2,3}\.\d)/i) || text.match(/Peso\s*(\d{2,3}\.\d)/i);
-        const mmeMatch = text.match(/MME\s*\(kg\)\s*(\d{2,3}\.\d)/i) || text.match(/Masa\s*Muscular\s*Esquel[eé]tica\s*(\d{2,3}\.\d)/i);
-        const pgcMatch = text.match(/PGC\s*\(\%\)\s*(\d{1,2}\.\d)/i) || text.match(/Porcentaje\s*de\s*Grasa\s*Corporal\s*(\d{1,2}\.\d)/i);
-        const imcMatch = text.match(/IMC\s*\(kg\/m²\)\s*(\d{1,2}\.\d)/i) || text.match(/IMC\s*(\d{1,2}\.\d)/i);
-
-        if (scoreMatch) document.getElementById('ib-score').value = scoreMatch[1];
-        if (weightMatch) document.getElementById('ib-weight').value = weightMatch[1];
-        if (mmeMatch) document.getElementById('ib-mme').value = mmeMatch[1];
-        if (pgcMatch) document.getElementById('ib-pgc').value = pgcMatch[1];
-        if (imcMatch) document.getElementById('ib-imc').value = imcMatch[1];
-
-        document.getElementById('ib-date').value = new Date().toISOString().split('T')[0];
-    }
-
-    // --- MANEJO DE REGISTRO INBODY ---
-    function saveInBodyData(e) {
-        e.preventDefault();
-        const user = appData.activeUser;
-        if (!user) return alert('Seleccione un usuario');
-
-        const entry = {
-            id: Date.now(),
-            date: document.getElementById('ib-date').value,
-            score: parseFloat(document.getElementById('ib-score').value),
-            weight: parseFloat(document.getElementById('ib-weight').value),
-            mme: parseFloat(document.getElementById('ib-mme').value),
-            fat: parseFloat(document.getElementById('ib-fat').value),
-            pgc: parseFloat(document.getElementById('ib-pgc').value),
-            imc: parseFloat(document.getElementById('ib-imc').value),
-            visceral: parseInt(document.getElementById('ib-visceral').value)
-        };
-
-        appData.users[user].inbody.push(entry);
-        // Ordenar por fecha
-        appData.users[user].inbody.sort((a,b) => new Date(a.date) - new Date(b.date));
-        
-        saveData();
-        renderInBody();
-        document.getElementById('inbody-form').reset();
-    }
-
-    function renderInBody() {
-        const user = appData.activeUser;
-        const tbody = document.getElementById('inbody-history-body');
-        tbody.innerHTML = '';
-
-        if (!user || !appData.users[user]) return;
-
-        const records = appData.users[user].inbody;
-
-        records.forEach(r => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${r.date}</td>
-                <td><strong>${r.score}/100</strong></td>
-                <td>${r.weight}</td>
-                <td>${r.mme}</td>
-                <td>${r.pgc}%</td>
-                <td>${r.imc}</td>
-                <td><button class="btn-secondary" style="padding:4px 8px; font-size:0.8rem;" onclick="generateSinglePDF(${r.id})">PDF</button></td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-        renderChart(records);
-    }
-
-    // --- GRAFICAS ---
-    function renderChart(records) {
-        const ctx = document.getElementById('inbodyChart').getContext('2d');
-
-        if (chartInstance) {
-            chartInstance.destroy();
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            db = firebase.firestore();
+        } catch (e) {
+            console.warn("Firebase operando en modo fallback local:", e);
         }
 
-        const labels = records.map(r => r.date);
-        const weights = records.map(r => r.weight);
-        const mmeData = records.map(r => r.mme);
-        const pgcData = records.map(r => r.pgc);
-
-        chartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Peso (kg)',
-                        data: weights,
-                        borderColor: '#2563eb',
-                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'MME - Músculo (kg)',
-                        data: mmeData,
-                        borderColor: '#16a34a',
-                        backgroundColor: 'rgba(22, 163, 74, 0.1)',
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'PGC - Grasa (%)',
-                        data: pgcData,
-                        borderColor: '#dc2626',
-                        backgroundColor: 'rgba(220, 38, 38, 0.1)',
-                        yAxisID: 'y1'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: { display: true, text: 'Masa (kg)' }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        grid: { drawOnChartArea: false },
-                        title: { display: true, text: 'Porcentaje (%)' }
-                    }
+        // Estructura de Datos Local
+        let localState = JSON.parse(localStorage.getItem('gymrats_local_db')) || {
+            activeUser: "Oscar Robles",
+            users: {
+                "Oscar Robles": {
+                    routines: [],
+                    suspensions: [],
+                    inbody: []
                 }
             }
-        });
-    }
-
-    // --- GENERACIÓN DE PDF ---
-    function generatePDF() {
-        const element = document.getElementById('pdf-report-area');
-        const user = appData.activeUser || 'Usuario';
-        const opt = {
-            margin:       0.5,
-            filename:     `InBody_Historico_${user}.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2 },
-            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(element).save();
-    }
-
-    function generateSinglePDF(recordId) {
-        const user = appData.activeUser;
-        const record = appData.users[user].inbody.find(r => r.id === recordId);
-        if (!record) return;
-
-        const content = document.createElement('div');
-        content.style.padding = '20px';
-        content.innerHTML = `
-            <h2>Reporte InBody - ${user}</h2>
-            <p><strong>Fecha de Evaluación:</strong> ${record.date}</p>
-            <hr>
-            <h3>Resultados Principales</h3>
-            <ul>
-                <li><strong>Puntuación InBody:</strong> ${record.score} / 100</li>
-                <li><strong>Peso:</strong> ${record.weight} kg</li>
-                <li><strong>Masa Muscular Esquelética (MME):</strong> ${record.mme} kg</li>
-                <li><strong>Masa Grasa Corporal:</strong> ${record.fat} kg</li>
-                <li><strong>Porcentaje de Grasa Corporal (PGC):</strong> ${record.pgc} %</li>
-                <li><strong>IMC:</strong> ${record.imc} kg/m²</li>
-                <li><strong>Nivel de Grasa Visceral:</strong> ${record.visceral}</li>
-            </ul>
-        `;
-
-        const opt = {
-            margin:       0.5,
-            filename:     `InBody_${user}_${record.date}.pdf`,
-            html2canvas:  { scale: 2 },
-            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
         };
 
-        html2pdf().set(opt).from(content).save();
-    }
-</script>
+        function persistState() {
+            localStorage.setItem('gymrats_local_db', JSON.stringify(localState));
+            if (db && localState.activeUser) {
+                db.collection("athletes").doc(localState.activeUser).set(localState.users[localState.activeUser] || {}, { merge: true });
+            }
+        }
+
+        // NAVEGACIÓN Y CONTROL DE VISTAS
+        function switchTab(tabId) {
+            document.querySelectorAll('.section-view').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.menu-btn').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            event.target.classList.add('active');
+
+            const titles = {
+                'dashboard': 'Dashboard General',
+                'routines': 'Registro de Rutinas y Cargas',
+                'suspension': 'Suspensión Dinámica',
+                'inbody': 'Escaneo InBody & Registro',
+                'analytics': 'Analíticas de Sobrecarga Progresiva',
+                'users': 'Gestión de Atletas'
+            };
+            document.getElementById('page-title').textContent = titles[tabId] || 'GymRats App';
+
+            if (tabId === 'dashboard') renderDashboard();
+            if (tabId === 'analytics') renderAnalyticsChart();
+        }
+
+        function populateUsersDropdown() {
+            const select = document.getElementById('active-user-select');
+            select.innerHTML = '';
+            Object.keys(localState.users).forEach(usr => {
+                const opt = document.createElement('option');
+                opt.value = usr;
+                opt.textContent = usr;
+                if (usr === localState.activeUser) opt.selected = true;
+                select.appendChild(opt);
+            });
+            renderUserList();
+        }
+
+        function changeActiveUser() {
+            const val = document.getElementById('active-user-select').value;
+            if (!val) return;
+            localState.activeUser = val;
+            persistState();
+            refreshCurrentUserData();
+        }
+
+        function refreshCurrentUserData() {
+            renderRoutinesTable();
+            renderSuspensionsTable();
+            renderInbodyTable();
+            renderDashboard();
+        }
+
+        function handleCreateUser() {
+            const input = document.getElementById('new-user-name');
+            const name = input.value.trim();
+            if (!name) return alert('Ingrese un nombre válido');
+
+            if (!localState.users[name]) {
+                localState.users[name] = { routines: [], suspensions: [], inbody: [] };
+                localState.activeUser = name;
+                persistState();
+                populateUsersDropdown();
+                refreshCurrentUserData();
+                input.value = '';
+            } else {
+                alert('El atleta ya existe');
+            }
+        }
+
+        function renderUserList() {
+            const container = document.getElementById('users-list-container');
+            container.innerHTML = '';
+            Object.keys(localState.users).forEach(u => {
+                const li = document.createElement('li');
+                li.style.cssText = 'display:flex; justify-between; align-items:center; padding:10px; border-bottom:1px solid var(--border);';
+                li.innerHTML = `<span>👤 <strong>${u}</strong></span>`;
+                container.appendChild(li);
+            });
+        }
+
+        // LÓGICA DE RUTINAS
+        function handleSaveRoutine(e) {
+            e.preventDefault();
+            const usr = localState.activeUser;
+            if (!usr) return alert('Seleccione un atleta');
+
+            const type = document.getElementById('routine-type').value;
+            const name = document.getElementById('exercise-name').value;
+            const weight = parseFloat(document.getElementById('weight-value').value);
+            const reps = document.getElementById('reps-detail').value;
+            const date = document.getElementById('routine-date').value || new Date().toISOString().split('T')[0];
+            
+            const dims = document.getElementsByName('weight-dim');
+            let unit = 'lb';
+            for (let r of dims) { if (r.checked) unit = r.value; }
+
+            const record = { id: Date.now(), type, name, weight, unit, reps, date };
+            localState.users[usr].routines.unshift(record);
+            persistState();
+            renderRoutinesTable();
+            document.getElementById('routine-form').reset();
+        }
+
+        function renderRoutinesTable() {
+            const usr = localState.activeUser;
+            const tbody = document.getElementById('routine-table-body');
+            tbody.innerHTML = '';
+            if (!usr || !localState.users[usr]) return;
+
+            localState.users[usr].routines.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${r.date}</td>
+                    <td><span style="color:var(--accent); font-weight:bold;">${r.type}</span></td>
+                    <td>${r.name}</td>
+                    <td><strong>${r.weight} ${r.unit || 'lb'}</strong></td>
+                    <td>${r.reps}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // CRONÓMETRO Y SUSPENSIONES
+        let timerInterval = null;
+        let startTime = 0;
+
+        function startTimer() {
+            if (timerInterval) return;
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsed = (Date.now() - startTime) / 1000;
+                document.getElementById('timer-display').textContent = elapsed.toFixed(1) + 's';
+                document.getElementById('suspension-time').value = elapsed.toFixed(1);
+            }, 100);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
+        function resetTimer() {
+            stopTimer();
+            document.getElementById('timer-display').textContent = '00:00.0';
+            document.getElementById('suspension-time').value = '';
+        }
+
+        function handleSaveSuspension(e) {
+            e.preventDefault();
+            const usr = localState.activeUser;
+            const time = parseFloat(document.getElementById('suspension-time').value);
+            const type = document.getElementById('suspension-type').value;
+            const weight = parseFloat(document.getElementById('suspension-weight').value) || 0;
+
+            const record = { id: Date.now(), date: new Date().toLocaleDateString(), time, type, weight };
+            localState.users[usr].suspensions.unshift(record);
+            persistState();
+            renderSuspensionsTable();
+            resetTimer();
+        }
+
+        function renderSuspensionsTable() {
+            const usr = localState.activeUser;
+            const tbody = document.getElementById('suspension-table-body');
+            tbody.innerHTML = '';
+            if (!usr || !localState.users[usr]) return;
+
+            localState.users[usr].suspensions.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${s.date}</td>
+                    <td><strong>${s.time} s</strong></td>
+                    <td>${s.type}</td>
+                    <td>${s.weight ? s.weight + ' lb/kg' : 'Sin Lastre'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // OCR Y PROCESAMIENTO INBODY
+        async function processInbodyOCR(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const status = document.getElementById('ocr-status-message');
+            status.style.display = 'block';
+            status.textContent = "Procesando documento InBody mediante Tesseract OCR...";
+
+            try {
+                const worker = await Tesseract.createWorker('spa');
+                const ret = await worker.recognize(file);
+                await worker.terminate();
+
+                status.textContent = "Lectura completada. Verifique y guarde los valores capturados.";
+                parseInBodyText(ret.data.text);
+            } catch (err) {
+                console.error(err);
+                status.textContent = "Error durante el análisis OCR. Ingrese los datos manualmente.";
+            }
+        }
+
+        function parseInBodyText(text) {
+            // RegEx optimizado para ficha InBody 270 (Excluye Gasto Calórico)
+            const scoreMatch = text.match(/(\d{2,3})\s*\/\s*100\s*Puntos/i) || text.match(/Puntuaci[oó]n\s*InBody\s*(\d{2,3})/i);
+            const weightMatch = text.match(/Peso\s*\(kg\)\s*(\d{2,3}\.\d)/i) || text.match(/Peso\s*(\d{2,3}\.\d)/i);
+            const mmeMatch = text.match(/MME\s*\(kg\)\s*(\d{2,3}\.\d)/i) || text.match(/Masa\s*Muscular\s*(\d{2,3}\.\d)/i);
+            const pgcMatch = text.match(/PGC\s*\(\%\)\s*(\d{1,2}\.\d)/i) || text.match(/Porcentaje\s*de\s*Grasa\s*(\d{1,2}\.\d)/i);
+            const imcMatch = text.match(/IMC\s*\(kg\/m²\)\s*(\d{1,2}\.\d)/i) || text.match(/IMC\s*(\d{1,2}\.\d)/i);
+
+            if (scoreMatch) document.getElementById('ib-score').value = scoreMatch[1];
+            if (weightMatch) document.getElementById('ib-weight').value = weightMatch[1];
+            if (mmeMatch) document.getElementById('ib-mme').value = mmeMatch[1];
+            if (pgcMatch) document.getElementById('ib-pgc').value = pgcMatch[1];
+            if (imcMatch) document.getElementById('ib-imc').value = imcMatch[1];
+            document.getElementById('ib-date').value = new Date().toISOString().split('T')[0];
+        }
+
+        function handleSaveInbody(e) {
+            e.preventDefault();
+            const usr = localState.activeUser;
+            const record = {
+                id: Date.now(),
+                date: document.getElementById('ib-date').value,
+                score: parseFloat(document.getElementById('ib-score').value),
+                weight: parseFloat(document.getElementById('ib-weight').value),
+                mme: parseFloat(document.getElementById('ib-mme').value),
+                fat: parseFloat(document.getElementById('ib-fat').value),
+                pgc: parseFloat(document.getElementById('ib-pgc').value),
+                imc: parseFloat(document.getElementById('ib-imc').value),
+                visceral: parseInt(document.getElementById('ib-visceral').value) || 0
+            };
+
+            localState.users[usr].inbody.push(record);
+            localState.users[usr].inbody.sort((a,b) => new Date(a.date) - new Date(b.date));
+            persistState();
+            renderInbodyTable();
+            renderDashboard();
+            document.getElementById('inbody-data-form').reset();
+        }
+
+        function renderInbodyTable() {
+            const usr = localState.activeUser;
+            const tbody = document.getElementById('inbody-table-body');
+            tbody.innerHTML = '';
+            if (!usr || !localState.users[usr]) return;
+
+            localState.users[usr].inbody.forEach(ib => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${ib.date}</td>
+                    <td><strong style="color:var(--accent);">${ib.score}/100</strong></td>
+                    <td>${ib.weight} kg</td>
+                    <td>${ib.mme} kg</td>
+                    <td>${ib.pgc}%</td>
+                    <td>${ib.imc}</td>
+                    <td><button class="btn-primary" style="padding:4px 8px; font-size:0.8rem;" onclick="generateSingleInBodyPdf('${ib.id}')">PDF</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // RENDERIZADO DE DASHBOARD Y ANALÍTICAS
+        let dashChart = null;
+        function renderDashboard() {
+            const usr = localState.activeUser;
+            if (!usr || !localState.users[usr]) return;
+
+            const userData = localState.users[usr];
+            const inbodyList = userData.inbody || [];
+
+            document.getElementById('dash-routines-count').textContent = (userData.routines || []).length;
+
+            if (inbodyList.length > 0) {
+                const latest = inbodyList[inbodyList.length - 1];
+                document.getElementById('dash-inbody-score').textContent = `${latest.score} / 100`;
+                document.getElementById('dash-weight').textContent = `${latest.weight} kg`;
+            } else {
+                document.getElementById('dash-inbody-score').textContent = '-- / 100';
+                document.getElementById('dash-weight').textContent = '-- kg';
+            }
+
+            renderOverviewChart(inbodyList);
+        }
+
+        function renderOverviewChart(inbodyRecords) {
+            const ctx = document.getElementById('dashOverviewChart').getContext('2d');
+            if (dashChart) dashChart.destroy();
+
+            dashChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: inbodyRecords.map(r => r.date),
+                    datasets: [
+                        { label: 'Peso (kg)', data: inbodyRecords.map(r => r.weight), borderColor: '#3b82f6', tension: 0.3 },
+                        { label: 'MME (kg)', data: inbodyRecords.map(r => r.mme), borderColor: '#22c55e', tension: 0.3 },
+                        { label: 'PGC (%)', data: inbodyRecords.map(r => r.pgc), borderColor: '#ef4444', tension: 0.3 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        let analyticsChart = null;
+        function renderAnalyticsChart() {
+            const usr = localState.activeUser;
+            const records = (localState.users[usr] && localState.users[usr].inbody) ? localState.users[usr].inbody : [];
+            const ctx = document.getElementById('analyticsChart').getContext('2d');
+
+            if (analyticsChart) analyticsChart.destroy();
+
+            analyticsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: records.map(r => r.date),
+                    datasets: [
+                        { label: 'Puntuación InBody', data: records.map(r => r.score), backgroundColor: '#3b82f6' },
+                        { label: 'Masa Muscular (kg)', data: records.map(r => r.mme), backgroundColor: '#22c55e' }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        // GENERACIÓN DE PDFS
+        function downloadPdfSummary() {
+            const element = document.getElementById('export-pdf-area');
+            const usr = localState.activeUser;
+            const opt = {
+                margin: 0.5,
+                filename: `Reporte_GymRats_${usr}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        function generateSingleInBodyPdf(recordId) {
+            const usr = localState.activeUser;
+            const rec = localState.users[usr].inbody.find(i => i.id == recordId);
+            if (!rec) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.style.padding = '20px';
+            wrapper.style.color = '#000';
+            wrapper.innerHTML = `
+                <h2>Reporte de Composición Corporal InBody</h2>
+                <p><strong>Atleta:</strong> ${usr}</p>
+                <p><strong>Fecha del Test:</strong> ${rec.date}</p>
+                <hr style="margin:10px 0;">
+                <p><strong>Puntuación InBody:</strong> ${rec.score} / 100</p>
+                <p><strong>Peso Total:</strong> ${rec.weight} kg</p>
+                <p><strong>Masa Muscular Esquelética (MME):</strong> ${rec.mme} kg</p>
+                <p><strong>Masa Grasa Corporal:</strong> ${rec.fat} kg</p>
+                <p><strong>Porcentaje de Grasa Corporal (PGC):</strong> ${rec.pgc} %</p>
+                <p><strong>Índice de Masa Corporal (IMC):</strong> ${rec.imc} kg/m²</p>
+                <p><strong>Nivel de Grasa Visceral:</strong> ${rec.visceral}</p>
+            `;
+
+            html2pdf().set({ margin: 0.5, filename: `InBody_${usr}_${rec.date}.pdf` }).from(wrapper).save();
+        }
+
+        // INICIALIZACIÓN
+        window.onload = function() {
+            document.getElementById('routine-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('ib-date').value = new Date().toISOString().split('T')[0];
+            populateUsersDropdown();
+            refreshCurrentUserData();
+        };
+    </script>
 </body>
 </html>
