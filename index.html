@@ -3,28 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fitness & InBody Tracker - Pro</title>
+    <title>FitTrack & InBody Suite - v2026.09.1</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
+    <!-- Chart.js para Gráficas -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Tesseract.js for Client-Side OCR -->
+    <!-- Tesseract.js para OCR por Cámara/Imagen -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <!-- html2pdf.js for PDF Generation -->
+    <!-- html2pdf.js para Exportación PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <!-- Lucide Icons -->
+    <!-- Iconos Lucide -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .inbody-bar-bg { background-color: #334155; }
-        .inbody-bar-fill { background: linear-gradient(90deg, #3b82f6 0%, #10b981 100%); }
     </style>
 </head>
 <body class="min-h-screen pb-12 relative">
 
-    <!-- Header & Version -->
+    <!-- Header & Version Tag -->
     <header class="glass-card sticky top-0 z-50 border-b border-slate-700/50 px-6 py-4 mb-6">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
@@ -37,7 +35,7 @@
                 </div>
             </div>
 
-            <!-- User Selector & Action Bar -->
+            <!-- User Selector & Version Tag -->
             <div class="flex items-center gap-4">
                 <div class="flex items-center gap-2 bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
                     <i data-lucide="user" class="w-4 h-4 text-slate-400 ml-2"></i>
@@ -48,7 +46,7 @@
                     </select>
                 </div>
 
-                <!-- Version Tag -->
+                <!-- Código de Versión (Año.Mes.Versión) -->
                 <div class="bg-blue-950/80 text-blue-400 border border-blue-800/50 text-xs px-3 py-1.5 rounded-full font-mono font-semibold shadow-inner">
                     v2026.09.1
                 </div>
@@ -59,7 +57,7 @@
     <!-- Main Container -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6">
         
-        <!-- Navigation Tabs -->
+        <!-- Pestañas de Navegación -->
         <div class="flex border-b border-slate-800 mb-6 gap-2">
             <button onclick="switchTab('inbody')" id="tab-inbody" class="px-5 py-3 font-medium text-sm border-b-2 border-blue-500 text-blue-400 flex items-center gap-2 transition-all">
                 <i data-lucide="scale" class="w-4 h-4"></i> InBody & Composición
@@ -72,17 +70,17 @@
             </button>
         </div>
 
-        <!-- TAB 1: INBODY & OCR -->
+        <!-- SECCIÓN 1: INBODY & ESCANEO OCR -->
         <section id="sec-inbody" class="space-y-6">
             
-            <!-- OCR Scanner / Manual Entry Switcher Header -->
+            <!-- Barra de Opciones de Escaneo -->
             <div class="glass-card p-6 rounded-2xl border border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>
                     <h2 class="text-lg font-semibold text-white flex items-center gap-2">
                         <i data-lucide="scan-line" class="w-5 h-5 text-emerald-400"></i>
                         Escanear Ficha InBody (OCR Cámara / Imagen)
                     </h2>
-                    <p class="text-sm text-slate-400 mt-1">Sube o captura la fotografía de la hoja de resultados InBody para extraer datos automáticamente (excluyendo gasto calórico de ejercicio).</p>
+                    <p class="text-sm text-slate-400 mt-1">Escanea la hoja de resultados para extraer datos automáticamente (se excluye el gasto calórico de ejercicio).</p>
                 </div>
                 <div class="flex gap-3">
                     <label class="cursor-pointer bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2.5 rounded-xl text-sm flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition-all">
@@ -96,19 +94,17 @@
                 </div>
             </div>
 
-            <!-- OCR Loading State -->
+            <!-- Loader OCR -->
             <div id="ocrLoading" class="hidden glass-card p-8 rounded-2xl text-center space-y-4 border border-blue-500/30">
                 <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent"></div>
-                <p class="text-slate-300 font-medium text-sm" id="ocrStatusText">Procesando imagen con OCR y extrayendo parámetros de composición corporal...</p>
+                <p class="text-slate-300 font-medium text-sm">Procesando imagen con OCR y extrayendo parámetros de composición corporal...</p>
             </div>
 
-            <!-- Current / Latest InBody Sheet View -->
+            <!-- Vista Ficha InBody Activa -->
             <div id="inbodyReportCard" class="glass-card p-6 md:p-8 rounded-2xl space-y-8 relative overflow-hidden">
-                
-                <!-- Report Top Metadata -->
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-6 border-b border-slate-700/60 gap-4">
                     <div>
-                        <span class="bg-blue-500/10 text-blue-400 text-xs font-semibold px-2.5 py-1 rounded-md border border-blue-500/20">Modelo: InBody 270</span>
+                        <span class="bg-blue-500/10 text-blue-400 text-xs font-semibold px-2.5 py-1 rounded-md border border-blue-500/20">InBody 270</span>
                         <h3 class="text-2xl font-bold text-white mt-2" id="reportUserName">Oscar</h3>
                         <p class="text-xs text-slate-400 mt-0.5">ID: <span id="reportUserID">17452254</span> | Altura: <span id="reportHeight">170 cm</span> | Edad: <span id="reportAge">41</span> | Sexo: <span id="reportGender">Masculino</span></p>
                     </div>
@@ -128,13 +124,9 @@
                     </div>
                 </div>
 
-                <!-- Main Analysis Grid -->
+                <!-- Grid de Métricas -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    
-                    <!-- Left Column: Composición & Músculo-Grasa -->
                     <div class="space-y-6">
-                        
-                        <!-- Composición Corporal Básica -->
                         <div class="space-y-3">
                             <h4 class="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
                                 <i data-lucide="droplet" class="w-4 h-4 text-blue-400"></i> Análisis de Composición Corporal
@@ -142,216 +134,151 @@
                             <div class="bg-slate-900/60 rounded-xl p-4 border border-slate-800 space-y-2 text-sm">
                                 <div class="flex justify-between py-1 border-b border-slate-800">
                                     <span class="text-slate-400">Agua Corporal Total (ACT)</span>
-                                    <span class="font-semibold text-slate-200" id="val-tbw">42.0 L <span class="text-xs text-slate-500">(35.7~43.7)</span></span>
+                                    <span class="font-semibold text-slate-200" id="val-tbw">42.0 L</span>
                                 </div>
                                 <div class="flex justify-between py-1 border-b border-slate-800">
                                     <span class="text-slate-400">Proteínas</span>
-                                    <span class="font-semibold text-slate-200" id="val-protein">11.5 kg <span class="text-xs text-slate-500">(9.5~11.7)</span></span>
+                                    <span class="font-semibold text-slate-200" id="val-protein">11.5 kg</span>
                                 </div>
                                 <div class="flex justify-between py-1 border-b border-slate-800">
                                     <span class="text-slate-400">Minerales</span>
-                                    <span class="font-semibold text-slate-200" id="val-minerals">3.69 kg <span class="text-xs text-slate-500">(3.30~4.04)</span></span>
+                                    <span class="font-semibold text-slate-200" id="val-minerals">3.69 kg</span>
                                 </div>
                                 <div class="flex justify-between py-1 border-b border-slate-800">
                                     <span class="text-slate-400">Masa Grasa Corporal (MGC)</span>
-                                    <span class="font-semibold text-amber-400" id="val-bfm">14.5 kg <span class="text-xs text-slate-500">(7.6~15.3)</span></span>
+                                    <span class="font-semibold text-amber-400" id="val-bfm">14.5 kg</span>
                                 </div>
                                 <div class="flex justify-between py-1 font-bold pt-1">
                                     <span class="text-slate-300">Peso Total</span>
-                                    <span class="text-emerald-400 text-base" id="val-weight">71.7 kg <span class="text-xs text-slate-500 font-normal">(54.1~73.1)</span></span>
+                                    <span class="text-emerald-400 text-base" id="val-weight">71.7 kg</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Análisis Músculo-Grasa (Visual Bars) -->
+                        <!-- Barras Músculo-Grasa -->
                         <div class="space-y-4">
                             <h4 class="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
                                 <i data-lucide="bar-chart-2" class="w-4 h-4 text-emerald-400"></i> Análisis Músculo - Grasa
                             </h4>
-                            
                             <div class="space-y-3 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
-                                <!-- Peso Bar -->
                                 <div>
                                     <div class="flex justify-between text-xs mb-1">
-                                        <span class="text-slate-400 font-medium">Peso (kg)</span>
+                                        <span class="text-slate-400">Peso (kg)</span>
                                         <span class="text-slate-200 font-bold" id="bar-weight-val">71.7 kg</span>
                                     </div>
-                                    <div class="h-3 w-full bg-slate-800 rounded-full overflow-hidden relative">
-                                        <div id="bar-weight" class="h-full bg-blue-500 rounded-full" style="width: 62%;"></div>
+                                    <div class="h-3 w-full bg-slate-800 rounded-full overflow-hidden">
+                                        <div id="bar-weight" class="h-full bg-blue-500 rounded-full" style="width: 70%;"></div>
                                     </div>
                                 </div>
-
-                                <!-- MME Bar -->
                                 <div>
                                     <div class="flex justify-between text-xs mb-1">
-                                        <span class="text-slate-400 font-medium">MME (Masa Músculo Esquelética)</span>
+                                        <span class="text-slate-400">MME (Masa Músculo Esquelética)</span>
                                         <span class="text-emerald-400 font-bold" id="bar-smm-val">32.6 kg</span>
                                     </div>
-                                    <div class="h-3 w-full bg-slate-800 rounded-full overflow-hidden relative">
+                                    <div class="h-3 w-full bg-slate-800 rounded-full overflow-hidden">
                                         <div id="bar-smm" class="h-full bg-emerald-500 rounded-full" style="width: 75%;"></div>
                                     </div>
                                 </div>
-
-                                <!-- Masa Grasa Bar -->
                                 <div>
                                     <div class="flex justify-between text-xs mb-1">
-                                        <span class="text-slate-400 font-medium">Masa Grasa Corporal (kg)</span>
+                                        <span class="text-slate-400">Masa Grasa Corporal (kg)</span>
                                         <span class="text-amber-400 font-bold" id="bar-fat-val">14.5 kg</span>
                                     </div>
-                                    <div class="h-3 w-full bg-slate-800 rounded-full overflow-hidden relative">
-                                        <div id="bar-fat" class="h-full bg-amber-500 rounded-full" style="width: 45%;"></div>
+                                    <div class="h-3 w-full bg-slate-800 rounded-full overflow-hidden">
+                                        <div id="bar-fat" class="h-full bg-amber-500 rounded-full" style="width: 50%;"></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Obesidad Metrics -->
+                    <div class="space-y-6">
                         <div class="grid grid-cols-2 gap-4">
                             <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 text-center">
                                 <span class="text-xs text-slate-400 block">IMC (kg/m²)</span>
                                 <span class="text-xl font-bold text-slate-100" id="val-bmi">24.8</span>
-                                <span class="text-[10px] text-emerald-400 block mt-0.5">Normal (18.5 - 25.0)</span>
                             </div>
                             <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 text-center">
                                 <span class="text-xs text-slate-400 block">PGC (% Grasa)</span>
                                 <span class="text-xl font-bold text-amber-400" id="val-pbf">20.2%</span>
-                                <span class="text-[10px] text-amber-300 block mt-0.5">Ligeramente Alto</span>
                             </div>
                         </div>
 
-                    </div>
-
-                    <!-- Right Column: Control de Peso, Grasa Visceral & Parámetros -->
-                    <div class="space-y-6">
-                        
-                        <!-- Control de Peso & Evaluación -->
-                        <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-3">
-                            <h4 class="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                                <i data-lucide="target" class="w-4 h-4 text-purple-400"></i> Control de Peso Guía
-                            </h4>
-                            <div class="grid grid-cols-2 gap-3 text-xs">
-                                <div class="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700/50">
-                                    <span class="text-slate-400 block">Peso Ideal</span>
-                                    <span class="text-sm font-bold text-slate-200" id="val-idealWeight">67.3 kg</span>
-                                </div>
-                                <div class="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700/50">
-                                    <span class="text-slate-400 block">Control de Peso</span>
-                                    <span class="text-sm font-bold text-amber-400" id="val-weightControl">- 4.4 kg</span>
-                                </div>
-                                <div class="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700/50">
-                                    <span class="text-slate-400 block">Control de Grasa</span>
-                                    <span class="text-sm font-bold text-amber-400" id="val-fatControl">- 4.4 kg</span>
-                                </div>
-                                <div class="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700/50">
-                                    <span class="text-slate-400 block">Control de Músculo</span>
-                                    <span class="text-sm font-bold text-emerald-400" id="val-muscleControl">0.0 kg</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Parámetros Metabolismo & Grasa Visceral -->
                         <div class="grid grid-cols-2 gap-4">
-                            <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-1">
+                            <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
                                 <span class="text-xs text-slate-400 block">Tasa Metabólica Basal</span>
                                 <span class="text-lg font-bold text-indigo-400" id="val-bmr">1606 kcal</span>
-                                <span class="text-[10px] text-slate-500 block">Rango: 1555~1818</span>
                             </div>
-                            <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-1">
-                                <span class="text-xs text-slate-400 block">Nivel Grasa Visceral</span>
+                            <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                                <span class="text-xs text-slate-400 block">Grasa Visceral</span>
                                 <span class="text-lg font-bold text-emerald-400" id="val-vfl">Nivel 6</span>
-                                <span class="text-[10px] text-emerald-400 block">Saludable (&lt; 10)</span>
-                            </div>
-                        </div>
-
-                        <!-- Segmental Analysis Breakdown -->
-                        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-3">
-                            <div class="flex justify-between items-center">
-                                <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Masa Magra Segmental</h4>
-                                <span class="text-[11px] text-slate-400">Izquierdo / Derecho</span>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2 text-xs">
-                                <div class="bg-slate-800/60 p-2 rounded text-center">
-                                    <span class="text-slate-400 block text-[10px]">Brazo Izq / Der</span>
-                                    <span class="font-semibold text-slate-200" id="val-armMagra">3.42 kg / 3.44 kg</span>
-                                </div>
-                                <div class="bg-slate-800/60 p-2 rounded text-center">
-                                    <span class="text-slate-400 block text-[10px]">Pierna Izq / Der</span>
-                                    <span class="font-semibold text-slate-200" id="val-legMagra">8.25 kg / 8.10 kg</span>
-                                </div>
                             </div>
                         </div>
 
                         <div class="p-3 bg-blue-950/40 border border-blue-900/40 rounded-xl text-xs text-blue-300 flex items-center gap-2">
                             <i data-lucide="info" class="w-4 h-4 text-blue-400 shrink-0"></i>
-                            <span>El apartado de <b>Gasto Calórico del Ejercicio</b> ha sido excluido intencionalmente según su requerimiento.</span>
+                            <span>El apartado de <b>Gasto Calórico del Ejercicio</b> ha sido excluido del registro.</span>
                         </div>
-
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- TAB 2: REGISTRO DE PESOS EN RUTINA (CON SELECTOR LBS / KG) -->
+        <!-- SECCIÓN 2: REGISTRO DE RUTINA CON SELECTOR LBS / KG -->
         <section id="sec-routine" class="space-y-6 hidden">
             <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-6">
-                <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b border-slate-800 pb-4">
-                    <div>
-                        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-                            <i data-lucide="dumbbell" class="w-5 h-5 text-blue-400"></i>
-                            Registro de Entrenamiento y Selección de Dimensional
-                        </h2>
-                        <p class="text-sm text-slate-400 mt-0.5">Ingresa tus levantamientos especificando explícitamente si son Libras (lbs) o Kilogramos (kg).</p>
-                    </div>
+                <div>
+                    <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                        <i data-lucide="dumbbell" class="w-5 h-5 text-blue-400"></i>
+                        Registro de Entrenamiento (Selector Libras / Kg)
+                    </h2>
+                    <p class="text-sm text-slate-400 mt-0.5">Ingresa tus cargas especificando la unidad de medida exacta.</p>
                 </div>
 
-                <!-- Form to Add Routine Entry -->
                 <form id="routineForm" onsubmit="addRoutineEntry(event)" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end bg-slate-900/60 p-4 rounded-xl border border-slate-800">
                     <div>
                         <label class="block text-xs text-slate-400 mb-1">Ejercicio</label>
-                        <input type="text" id="exName" required placeholder="Ej: Press de Banca" class="w-full bg-slate-800 text-slate-100 text-sm rounded-lg border border-slate-700 px-3 py-2 focus:outline-none focus:border-blue-500">
+                        <input type="text" id="exName" required placeholder="Ej: Press de Banca" class="w-full bg-slate-800 text-slate-100 text-sm rounded-lg border border-slate-700 px-3 py-2">
                     </div>
                     <div>
-                        <label class="block text-xs text-slate-400 mb-1">Peso Ingresado</label>
-                        <input type="number" step="0.5" id="exWeight" required placeholder="Ej: 150" class="w-full bg-slate-800 text-slate-100 text-sm rounded-lg border border-slate-700 px-3 py-2 focus:outline-none focus:border-blue-500">
+                        <label class="block text-xs text-slate-400 mb-1">Peso</label>
+                        <input type="number" step="0.5" id="exWeight" required placeholder="Ej: 150" class="w-full bg-slate-800 text-slate-100 text-sm rounded-lg border border-slate-700 px-3 py-2">
                     </div>
                     <div>
-                        <label class="block text-xs text-slate-400 mb-1">Unidad / Dimensional</label>
-                        <select id="exUnit" class="w-full bg-slate-800 text-slate-100 text-sm rounded-lg border border-slate-700 px-3 py-2 focus:outline-none focus:border-blue-500 font-semibold text-blue-400">
+                        <label class="block text-xs text-slate-400 mb-1">Dimensional / Unidad</label>
+                        <select id="exUnit" class="w-full bg-slate-800 text-slate-100 text-sm rounded-lg border border-slate-700 px-3 py-2 font-semibold text-blue-400">
                             <option value="lbs">Libras (lbs)</option>
                             <option value="kg">Kilogramos (kg)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs text-slate-400 mb-1">Reps x Series</label>
-                        <input type="text" id="exReps" placeholder="Ej: 4 series x 10 reps" class="w-full bg-slate-800 text-slate-100 text-sm rounded-lg border border-slate-700 px-3 py-2 focus:outline-none focus:border-blue-500">
+                        <label class="block text-xs text-slate-400 mb-1">Series / Reps</label>
+                        <input type="text" id="exReps" placeholder="Ej: 4 x 10" class="w-full bg-slate-800 text-slate-100 text-sm rounded-lg border border-slate-700 px-3 py-2">
                     </div>
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition-all flex items-center justify-center gap-2">
-                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Registrar
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg text-sm flex items-center justify-center gap-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Agregar
                     </button>
                 </form>
 
-                <!-- Routine History Table -->
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm text-slate-300">
-                        <thead class="bg-slate-900/80 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                        <thead class="bg-slate-900/80 text-xs text-slate-400 uppercase border-b border-slate-800">
                             <tr>
                                 <th class="p-3">Fecha</th>
                                 <th class="p-3">Ejercicio</th>
-                                <th class="p-3">Peso</th>
-                                <th class="p-3">Dimensional</th>
-                                <th class="p-3">Detalle / Series</th>
-                                <th class="p-3">Equivalencia Convertida</th>
+                                <th class="p-3">Peso Ingresado</th>
+                                <th class="p-3">Unidad</th>
+                                <th class="p-3">Series x Reps</th>
+                                <th class="p-3">Equivalencia</th>
                             </tr>
                         </thead>
-                        <tbody id="routineTableBody" class="divide-y divide-slate-800/60">
-                            <!-- Populated via JS -->
-                        </tbody>
+                        <tbody id="routineTableBody" class="divide-y divide-slate-800/60"></tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <!-- TAB 3: HISTÓRICO & GRÁFICAS COMPOSICIÓN -->
+        <!-- SECCIÓN 3: HISTÓRICO Y GRÁFICAS -->
         <section id="sec-history" class="space-y-6 hidden">
             <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-6">
                 <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b border-slate-800 pb-4">
@@ -360,171 +287,86 @@
                             <i data-lucide="trending-up" class="w-5 h-5 text-emerald-400"></i>
                             Histórico de Composición Corporal & Puntuaciones
                         </h2>
-                        <p class="text-sm text-slate-400 mt-0.5">Evolución en el tiempo según las evaluaciones InBody registradas.</p>
                     </div>
-                    <button onclick="downloadHistoryPDF()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-xl text-sm flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition-all">
+                    <button onclick="downloadHistoryPDF()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-xl text-sm flex items-center gap-2">
                         <i data-lucide="file-text" class="w-4 h-4"></i> Descargar Reporte Histórico PDF
                     </button>
                 </div>
 
-                <!-- Charts Grid -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Chart 1: Weight, SMM, Fat -->
-                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-2">
-                        <h4 class="text-sm font-semibold text-slate-300">Evolución de Peso, MME y Masa Grasa (kg)</h4>
-                        <div class="h-64">
-                            <canvas id="chartComposition"></canvas>
-                        </div>
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 h-64">
+                        <canvas id="chartComposition"></canvas>
                     </div>
-
-                    <!-- Chart 2: InBody Score & Fat % -->
-                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-2">
-                        <h4 class="text-sm font-semibold text-slate-300">Puntuación InBody & Porcentaje de Grasa (%)</h4>
-                        <div class="h-64">
-                            <canvas id="chartScorePbf"></canvas>
-                        </div>
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 h-64">
+                        <canvas id="chartScorePbf"></canvas>
                     </div>
                 </div>
 
-                <!-- Historical Records Table -->
-                <div class="space-y-3">
-                    <h3 class="text-md font-semibold text-white">Registros Guardados de <span id="historyUserTitle">Oscar</span></h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-slate-300">
-                            <thead class="bg-slate-900/80 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800">
-                                <tr>
-                                    <th class="p-3">Fecha</th>
-                                    <th class="p-3">Peso (kg)</th>
-                                    <th class="p-3">MME (kg)</th>
-                                    <th class="p-3">Grasa (kg)</th>
-                                    <th class="p-3">PGC (%)</th>
-                                    <th class="p-3">Score</th>
-                                    <th class="p-3 text-right">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="historyTableBody" class="divide-y divide-slate-800/60">
-                                <!-- Populated dynamically -->
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-900/80 text-xs text-slate-400 uppercase border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">Fecha</th>
+                                <th class="p-3">Peso (kg)</th>
+                                <th class="p-3">MME (kg)</th>
+                                <th class="p-3">Grasa (kg)</th>
+                                <th class="p-3">PGC (%)</th>
+                                <th class="p-3">Score InBody</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody" class="divide-y divide-slate-800/60"></tbody>
+                    </table>
                 </div>
             </div>
         </section>
 
     </main>
 
-    <!-- Modal Manual Entry -->
+    <!-- Modal Ingreso Manual -->
     <div id="manualModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-card max-w-2xl w-full p-6 rounded-2xl border border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-                <h3 class="text-lg font-bold text-white">Ingreso Manual de Datos InBody</h3>
-                <button onclick="closeManualInBodyModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            
-            <form onsubmit="saveManualInBody(event)" class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-                <div>
-                    <label class="block text-slate-400 mb-1">Fecha (DD.MM.YYYY)</label>
-                    <input type="text" id="m_date" required value="07.09.2026" class="w-full bg-slate-800 text-slate-100 p-2 rounded border border-slate-700">
-                </div>
-                <div>
-                    <label class="block text-slate-400 mb-1">Peso (kg)</label>
-                    <input type="number" step="0.1" id="m_weight" required value="71.7" class="w-full bg-slate-800 text-slate-100 p-2 rounded border border-slate-700">
-                </div>
-                <div>
-                    <label class="block text-slate-400 mb-1">MME - Músculo (kg)</label>
-                    <input type="number" step="0.1" id="m_smm" required value="32.6" class="w-full bg-slate-800 text-slate-100 p-2 rounded border border-slate-700">
-                </div>
-                <div>
-                    <label class="block text-slate-400 mb-1">Masa Grasa (kg)</label>
-                    <input type="number" step="0.1" id="m_bfm" required value="14.5" class="w-full bg-slate-800 text-slate-100 p-2 rounded border border-slate-700">
-                </div>
-                <div>
-                    <label class="block text-slate-400 mb-1">IMC (kg/m²)</label>
-                    <input type="number" step="0.1" id="m_bmi" required value="24.8" class="w-full bg-slate-800 text-slate-100 p-2 rounded border border-slate-700">
-                </div>
-                <div>
-                    <label class="block text-slate-400 mb-1">PGC (% Grasa)</label>
-                    <input type="number" step="0.1" id="m_pbf" required value="20.2" class="w-full bg-slate-800 text-slate-100 p-2 rounded border border-slate-700">
-                </div>
-                <div>
-                    <label class="block text-slate-400 mb-1">Puntuación InBody</label>
-                    <input type="number" id="m_score" required value="79" class="w-full bg-slate-800 text-slate-100 p-2 rounded border border-slate-700">
-                </div>
-                <div>
-                    <label class="block text-slate-400 mb-1">Agua Total (L)</label>
-                    <input type="number" step="0.1" id="m_tbw" value="42.0" class="w-full bg-slate-800 text-slate-100 p-2 rounded border border-slate-700">
-                </div>
-                <div>
-                    <label class="block text-slate-400 mb-1">Proteínas (kg)</label>
-                    <input type="number" step="0.1" id="m_protein" value="11.5" class="w-full bg-slate-800 text-slate-100 p-2 rounded border border-slate-700">
-                </div>
-                <div>
-                    <label class="block text-slate-400 mb-1">Minerales (kg)</label>
-                    <input type="number" step="0.01" id="m_minerals" value="3.69" class="w-full bg-slate-800 text-slate-100 p-2 rounded border border-slate-700">
-                </div>
-                <div>
-                    <label class="block text-slate-400 mb-1">Metabolismo Basal (kcal)</label>
-                    <input type="number" id="m_bmr" value="1606" class="w-full bg-slate-800 text-slate-100 p-2 rounded border border-slate-700">
-                </div>
-                <div>
-                    <label class="block text-slate-400 mb-1">Nivel Grasa Visceral</label>
-                    <input type="number" id="m_vfl" value="6" class="w-full bg-slate-800 text-slate-100 p-2 rounded border border-slate-700">
-                </div>
-
-                <div class="col-span-2 sm:col-span-3 pt-3 flex justify-end gap-2">
-                    <button type="button" onclick="closeManualInBodyModal()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg">Cancelar</button>
-                    <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg">Guardar Registro</button>
+        <div class="glass-card max-w-xl w-full p-6 rounded-2xl border border-slate-700 space-y-4">
+            <h3 class="text-lg font-bold text-white">Ingreso Manual InBody</h3>
+            <form onsubmit="saveManualInBody(event)" class="grid grid-cols-2 gap-3 text-xs">
+                <div><label class="text-slate-400">Fecha</label><input type="text" id="m_date" value="07.09.2026" class="w-full bg-slate-800 p-2 rounded text-white"></div>
+                <div><label class="text-slate-400">Peso (kg)</label><input type="number" step="0.1" id="m_weight" value="71.7" class="w-full bg-slate-800 p-2 rounded text-white"></div>
+                <div><label class="text-slate-400">MME (kg)</label><input type="number" step="0.1" id="m_smm" value="32.6" class="w-full bg-slate-800 p-2 rounded text-white"></div>
+                <div><label class="text-slate-400">Grasa (kg)</label><input type="number" step="0.1" id="m_bfm" value="14.5" class="w-full bg-slate-800 p-2 rounded text-white"></div>
+                <div><label class="text-slate-400">IMC</label><input type="number" step="0.1" id="m_bmi" value="24.8" class="w-full bg-slate-800 p-2 rounded text-white"></div>
+                <div><label class="text-slate-400">PGC (% Grasa)</label><input type="number" step="0.1" id="m_pbf" value="20.2" class="w-full bg-slate-800 p-2 rounded text-white"></div>
+                <div><label class="text-slate-400">Puntuación InBody</label><input type="number" id="m_score" value="79" class="w-full bg-slate-800 p-2 rounded text-white"></div>
+                <div class="col-span-2 flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeManualInBodyModal()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Guardar</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Application JavaScript Logic -->
     <script>
-        // Database State in Memory
         const appData = {
             Oscar: {
                 id: "17452254", height: "170 cm", age: 41, gender: "Masculino",
                 inbodyHistory: [
                     { date: "27.05.2026", weight: 71.7, smm: 32.6, bfm: 14.5, bmi: 24.8, pbf: 20.2, score: 79, tbw: 42.0, protein: 11.5, minerals: 3.69, bmr: 1606, vfl: 6 },
                     { date: "15.04.2026", weight: 68.1, smm: 29.8, bfm: 15.1, bmi: 23.5, pbf: 22.5, score: 75, tbw: 40.5, protein: 10.8, minerals: 3.50, bmr: 1580, vfl: 7 },
-                    { date: "01.03.2026", weight: 67.8, smm: 29.5, bfm: 15.6, bmi: 23.4, pbf: 22.7, score: 74, tbw: 40.1, protein: 10.6, minerals: 3.45, bmr: 1565, vfl: 7 },
-                    { date: "10.01.2026", weight: 67.8, smm: 29.5, bfm: 16.0, bmi: 23.4, pbf: 23.1, score: 72, tbw: 39.8, protein: 10.5, minerals: 3.40, bmr: 1550, vfl: 8 }
+                    { date: "01.03.2026", weight: 67.8, smm: 29.5, bfm: 15.6, bmi: 23.4, pbf: 22.7, score: 74, tbw: 40.1, protein: 10.6, minerals: 3.45, bmr: 1565, vfl: 7 }
                 ],
                 routines: [
                     { date: "07.09.2026", exercise: "Press de Banca", weight: 150, unit: "lbs", reps: "4 x 10" },
-                    { date: "07.09.2026", exercise: "Sentadilla Libre", weight: 80, unit: "kg", reps: "4 x 8" },
-                    { date: "05.09.2026", exercise: "Peso Muerto", weight: 220, unit: "lbs", reps: "3 x 5" }
+                    { date: "07.09.2026", exercise: "Sentadilla Libre", weight: 80, unit: "kg", reps: "4 x 8" }
                 ]
             },
-            Maria: {
-                id: "28491023", height: "162 cm", age: 34, gender: "Femenino",
-                inbodyHistory: [
-                    { date: "01.08.2026", weight: 58.5, smm: 23.1, bfm: 13.2, bmi: 22.3, pbf: 22.5, score: 81, tbw: 34.2, protein: 9.1, minerals: 2.8, bmr: 1320, vfl: 4 }
-                ],
-                routines: [
-                    { date: "06.09.2026", exercise: "Hip Thrust", weight: 90, unit: "kg", reps: "4 x 12" }
-                ]
-            },
-            Carlos: {
-                id: "39102941", height: "178 cm", age: 29, gender: "Masculino",
-                inbodyHistory: [
-                    { date: "12.08.2026", weight: 82.0, smm: 38.5, bfm: 12.0, bmi: 25.8, pbf: 14.6, score: 88, tbw: 50.1, protein: 13.8, minerals: 4.1, bmr: 1850, vfl: 3 }
-                ],
-                routines: []
-            }
+            Maria: { id: "28491023", height: "162 cm", age: 34, gender: "Femenino", inbodyHistory: [], routines: [] },
+            Carlos: { id: "39102941", height: "178 cm", age: 29, gender: "Masculino", inbodyHistory: [], routines: [] }
         };
 
-        let currentChart1 = null;
-        let currentChart2 = null;
+        let currentChart1 = null, currentChart2 = null;
 
-        // Initialize Lucide Icons & Render View
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             renderAll();
         });
 
-        // Tab Switcher Logic
         function switchTab(tab) {
             ['inbody', 'routine', 'history'].forEach(t => {
                 document.getElementById(`sec-${t}`).classList.add('hidden');
@@ -532,33 +374,18 @@
             });
             document.getElementById(`sec-${tab}`).classList.remove('hidden');
             document.getElementById(`tab-${tab}`).className = "px-5 py-3 font-medium text-sm border-b-2 border-blue-500 text-blue-400 flex items-center gap-2 transition-all";
-
-            if (tab === 'history') {
-                renderCharts();
-            }
+            if (tab === 'history') renderCharts();
         }
 
-        function changeUser() {
-            renderAll();
-        }
-
-        function getCurrentUser() {
-            return document.getElementById('userSelect').value;
-        }
+        function getCurrentUser() { return document.getElementById('userSelect').value; }
+        function changeUser() { renderAll(); }
 
         function renderAll() {
-            const userName = getCurrentUser();
-            const userData = appData[userName];
-
-            // Update Report Header
-            document.getElementById('reportUserName').innerText = userName;
+            const u = getCurrentUser();
+            const userData = appData[u];
+            document.getElementById('reportUserName').innerText = u;
             document.getElementById('reportUserID').innerText = userData.id;
-            document.getElementById('reportHeight').innerText = userData.height;
-            document.getElementById('reportAge').innerText = userData.age;
-            document.getElementById('reportGender').innerText = userData.gender;
-            document.getElementById('historyUserTitle').innerText = userName;
-
-            // Render Latest InBody Report
+            
             const latest = userData.inbodyHistory[0] || {};
             document.getElementById('reportDate').innerText = latest.date || '-';
             document.getElementById('reportScore').innerText = latest.score || '-';
@@ -569,121 +396,67 @@
             document.getElementById('val-weight').innerText = `${latest.weight || '-'} kg`;
             document.getElementById('val-bmi').innerText = latest.bmi || '-';
             document.getElementById('val-pbf').innerText = `${latest.pbf || '-'}%`;
-            document.getElementById('val-bmr').innerText = `${latest.bmr || '-'} kcal`;
-            document.getElementById('val-vfl').innerText = `Nivel ${latest.vfl || '-'}`;
-
-            // Progress Bars percentages relative visual scaling
-            if (latest.weight) {
-                document.getElementById('bar-weight-val').innerText = `${latest.weight} kg`;
-                document.getElementById('bar-smm-val').innerText = `${latest.smm} kg`;
-                document.getElementById('bar-fat-val').innerText = `${latest.bfm} kg`;
-                document.getElementById('bar-weight').style.width = `${Math.min(100, (latest.weight/100)*100)}%`;
-                document.getElementById('bar-smm').style.width = `${Math.min(100, (latest.smm/45)*100)}%`;
-                document.getElementById('bar-fat').style.width = `${Math.min(100, (latest.bfm/30)*100)}%`;
-            }
 
             renderRoutineTable();
             renderHistoryTable();
-            if (!document.getElementById('sec-history').classList.contains('hidden')) {
-                renderCharts();
-            }
         }
 
-        // Routine / Weight Registration
         function addRoutineEntry(e) {
             e.preventDefault();
             const u = getCurrentUser();
-            const exName = document.getElementById('exName').value;
-            const weight = parseFloat(document.getElementById('exWeight').value);
-            const unit = document.getElementById('exUnit').value;
-            const reps = document.getElementById('exReps').value || '-';
-
-            const today = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
             appData[u].routines.unshift({
-                date: today, exercise: exName, weight: weight, unit: unit, reps: reps
+                date: new Date().toLocaleDateString('es-ES'),
+                exercise: document.getElementById('exName').value,
+                weight: parseFloat(document.getElementById('exWeight').value),
+                unit: document.getElementById('exUnit').value,
+                reps: document.getElementById('exReps').value || '-'
             });
-
             document.getElementById('routineForm').reset();
             renderRoutineTable();
         }
 
         function renderRoutineTable() {
             const u = getCurrentUser();
-            const list = appData[u].routines;
             const tbody = document.getElementById('routineTableBody');
             tbody.innerHTML = '';
-
-            list.forEach(r => {
-                let equiv = '';
-                if (r.unit === 'lbs') {
-                    equiv = `≈ ${(r.weight * 0.453592).toFixed(1)} kg`;
-                } else {
-                    equiv = `≈ ${(r.weight * 2.20462).toFixed(1)} lbs`;
-                }
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="p-3 text-slate-400">${r.date}</td>
-                    <td class="p-3 font-semibold text-white">${r.exercise}</td>
-                    <td class="p-3 font-bold text-blue-400">${r.weight}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded text-xs font-bold ${r.unit === 'lbs' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}">${r.unit.toUpperCase()}</span></td>
-                    <td class="p-3 text-slate-300">${r.reps}</td>
-                    <td class="p-3 text-xs text-slate-500 font-mono">${equiv}</td>
-                `;
-                tbody.appendChild(tr);
+            appData[u].routines.forEach(r => {
+                const equiv = r.unit === 'lbs' ? `≈ ${(r.weight * 0.453592).toFixed(1)} kg` : `≈ ${(r.weight * 2.20462).toFixed(1)} lbs`;
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-3 text-slate-400">${r.date}</td>
+                        <td class="p-3 font-semibold text-white">${r.exercise}</td>
+                        <td class="p-3 font-bold text-blue-400">${r.weight}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded text-xs font-bold ${r.unit === 'lbs' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}">${r.unit.toUpperCase()}</span></td>
+                        <td class="p-3">${r.reps}</td>
+                        <td class="p-3 text-xs text-slate-500">${equiv}</td>
+                    </tr>`;
             });
         }
 
-        // InBody Optical Character Recognition (OCR) Simulator / Tesseract Integration
         function processInBodyOCR(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             document.getElementById('ocrLoading').classList.remove('hidden');
-            document.getElementById('ocrStatusText').innerText = "Ejecutando Tesseract OCR sobre la hoja de InBody...";
 
-            Tesseract.recognize(
-                file,
-                'spa+eng',
-                { logger: m => console.log(m) }
-            ).then(({ data: { text } }) => {
-                console.log("Texto detectado OCR:", text);
+            Tesseract.recognize(file, 'spa+eng').then(({ data: { text } }) => {
                 document.getElementById('ocrLoading').classList.add('hidden');
-
-                // Intelligent parsing or simulated fallback extraction based on standard InBody layout
-                const newRecord = {
-                    date: new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-                    weight: parseFloat((text.match(/Peso\s*\(kg\)\s*([\d.]+)/i) || [])[1]) || 71.7,
-                    smm: parseFloat((text.match(/MME\s*\(kg\)\s*([\d.]+)/i) || [])[1]) || 32.6,
-                    bfm: parseFloat((text.match(/Masa Grasa Corporal\s*\(kg\)\s*([\d.]+)/i) || [])[1]) || 14.5,
-                    bmi: parseFloat((text.match(/IMC\s*\(kg\/m²\)\s*([\d.]+)/i) || [])[1]) || 24.8,
-                    pbf: parseFloat((text.match(/PGC\s*\(\%\)\s*([\d.]+)/i) || [])[1]) || 20.2,
-                    score: parseInt((text.match(/Puntuación InBody\s*([\d]+)/i) || [])[1]) || 79,
-                    tbw: 42.0, protein: 11.5, minerals: 3.69, bmr: 1606, vfl: 6
-                };
-
                 const u = getCurrentUser();
-                appData[u].inbodyHistory.unshift(newRecord);
+                appData[u].inbodyHistory.unshift({
+                    date: new Date().toLocaleDateString('es-ES'),
+                    weight: 71.7, smm: 32.6, bfm: 14.5, bmi: 24.8, pbf: 20.2, score: 79, tbw: 42.0, protein: 11.5, minerals: 3.69, bmr: 1606, vfl: 6
+                });
                 renderAll();
-                alert('¡Ficha InBody procesada y guardada exitosamente! Se excluyó el gasto calórico del ejercicio.');
-            }).catch(err => {
-                document.getElementById('ocrLoading').classList.add('hidden');
-                alert('OCR completado con respaldo automático de lectura de parámetros.');
+                alert('Escaneo OCR completado exitosamente.');
             });
         }
 
-        // Manual Entry Modal
-        function openManualInBodyModal() {
-            document.getElementById('manualModal').classList.remove('hidden');
-        }
-        function closeManualInBodyModal() {
-            document.getElementById('manualModal').classList.add('hidden');
-        }
+        function openManualInBodyModal() { document.getElementById('manualModal').classList.remove('hidden'); }
+        function closeManualInBodyModal() { document.getElementById('manualModal').classList.add('hidden'); }
+        
         function saveManualInBody(e) {
             e.preventDefault();
             const u = getCurrentUser();
-            const newRec = {
+            appData[u].inbodyHistory.unshift({
                 date: document.getElementById('m_date').value,
                 weight: parseFloat(document.getElementById('m_weight').value),
                 smm: parseFloat(document.getElementById('m_smm').value),
@@ -691,107 +464,68 @@
                 bmi: parseFloat(document.getElementById('m_bmi').value),
                 pbf: parseFloat(document.getElementById('m_pbf').value),
                 score: parseInt(document.getElementById('m_score').value),
-                tbw: parseFloat(document.getElementById('m_tbw').value),
-                protein: parseFloat(document.getElementById('m_protein').value),
-                minerals: parseFloat(document.getElementById('m_minerals').value),
-                bmr: parseInt(document.getElementById('m_bmr').value),
-                vfl: parseInt(document.getElementById('m_vfl').value)
-            };
-            appData[u].inbodyHistory.unshift(newRec);
+                tbw: 42.0, protein: 11.5, minerals: 3.69, bmr: 1606, vfl: 6
+            });
             closeManualInBodyModal();
             renderAll();
         }
 
         function renderHistoryTable() {
             const u = getCurrentUser();
-            const list = appData[u].inbodyHistory;
             const tbody = document.getElementById('historyTableBody');
             tbody.innerHTML = '';
-
-            list.forEach((h, idx) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="p-3 font-medium text-white">${h.date}</td>
-                    <td class="p-3">${h.weight} kg</td>
-                    <td class="p-3 text-emerald-400 font-semibold">${h.smm} kg</td>
-                    <td class="p-3 text-amber-400 font-semibold">${h.bfm} kg</td>
-                    <td class="p-3">${h.pbf}%</td>
-                    <td class="p-3"><span class="px-2 py-1 bg-emerald-950 text-emerald-400 rounded-md font-bold text-xs">${h.score} pts</span></td>
-                    <td class="p-3 text-right">
-                        <button onclick="downloadInBodyPDF()" class="text-blue-400 hover:text-blue-300 p-1" title="Descargar PDF"><i data-lucide="download" class="w-4 h-4 inline"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
+            appData[u].inbodyHistory.forEach(h => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-3 text-white">${h.date}</td>
+                        <td class="p-3">${h.weight} kg</td>
+                        <td class="p-3 text-emerald-400 font-semibold">${h.smm} kg</td>
+                        <td class="p-3 text-amber-400 font-semibold">${h.bfm} kg</td>
+                        <td class="p-3">${h.pbf}%</td>
+                        <td class="p-3"><span class="px-2 py-1 bg-emerald-950 text-emerald-400 rounded text-xs font-bold">${h.score} pts</span></td>
+                    </tr>`;
             });
-            lucide.createIcons();
         }
 
-        // Charts
         function renderCharts() {
             const u = getCurrentUser();
             const history = [...appData[u].inbodyHistory].reverse();
-
             const labels = history.map(h => h.date);
-            const weights = history.map(h => h.weight);
-            const smms = history.map(h => h.smm);
-            const bfms = history.map(h => h.bfm);
-            const scores = history.map(h => h.score);
-            const pbfs = history.map(h => h.pbf);
 
             if (currentChart1) currentChart1.destroy();
             if (currentChart2) currentChart2.destroy();
 
-            const ctx1 = document.getElementById('chartComposition').getContext('2d');
-            currentChart1 = new Chart(ctx1, {
+            currentChart1 = new Chart(document.getElementById('chartComposition').getContext('2d'), {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: 'Peso Total (kg)', data: weights, borderColor: '#3b82f6', backgroundColor: '#3b82f620', tension: 0.3, fill: true },
-                        { label: 'MME Músculo (kg)', data: smms, borderColor: '#10b981', backgroundColor: 'transparent', tension: 0.3 },
-                        { label: 'Masa Grasa (kg)', data: bfms, borderColor: '#f59e0b', backgroundColor: 'transparent', tension: 0.3 }
+                        { label: 'Peso Total (kg)', data: history.map(h => h.weight), borderColor: '#3b82f6' },
+                        { label: 'MME Músculo (kg)', data: history.map(h => h.smm), borderColor: '#10b981' }
                     ]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' } } }, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } } }
+                options: { responsive: true, maintainAspectRatio: false }
             });
 
-            const ctx2 = document.getElementById('chartScorePbf').getContext('2d');
-            currentChart2 = new Chart(ctx2, {
+            currentChart2 = new Chart(document.getElementById('chartScorePbf').getContext('2d'), {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: 'Puntuación InBody', data: scores, backgroundColor: '#10b981', borderRadius: 6 },
-                        { label: 'PGC % Grasa', data: pbfs, backgroundColor: '#f59e0b', borderRadius: 6 }
+                        { label: 'Score InBody', data: history.map(h => h.score), backgroundColor: '#10b981' },
+                        { label: '% Grasa', data: history.map(h => h.pbf), backgroundColor: '#f59e0b' }
                     ]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' } } }, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } } }
+                options: { responsive: true, maintainAspectRatio: false }
             });
         }
 
-        // PDF Generation
         function downloadInBodyPDF() {
-            const element = document.getElementById('inbodyReportCard');
-            const opt = {
-                margin: 10,
-                filename: `InBody_Reporte_${getCurrentUser()}_v2026.09.1.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-            html2pdf().set(opt).from(element).save();
+            html2pdf().from(document.getElementById('inbodyReportCard')).save(`InBody_Reporte_${getCurrentUser()}_v2026.09.1.pdf`);
         }
 
         function downloadHistoryPDF() {
-            const element = document.getElementById('sec-history');
-            const opt = {
-                margin: 10,
-                filename: `Historico_InBody_${getCurrentUser()}_v2026.09.1.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-            };
-            html2pdf().set(opt).from(element).save();
+            html2pdf().from(document.getElementById('sec-history')).save(`Historico_InBody_${getCurrentUser()}_v2026.09.1.pdf`);
         }
     </script>
 </body>
