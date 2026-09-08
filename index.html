@@ -98,22 +98,29 @@
     .btn-secondary { background: #475569; color: white; }
     .btn-success { background: var(--accent-green); color: #0f172a; }
     .btn-purple { background: var(--accent-purple); color: white; }
+    .btn-danger { background: var(--danger-color); color: white; }
 
-    /* Componentes de Selección e InBody Specifics */
-    .active-user-container { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--text-muted); }
-    .active-user-select { background: #0f172a; border: 1px solid var(--border-color); color: var(--accent-blue); border-radius: 6px; padding: 0.25rem 0.5rem; font-weight: bold; outline: none; cursor: pointer; }
-
+    /* InBody Specifics & Silueta */
     .inbody-score-box { background: #0f172a; border: 1px solid var(--accent-blue); border-radius: 10px; padding: 1rem; text-align: center; margin-bottom: 1rem; }
     .inbody-score-val { font-size: 2.8rem; font-weight: 800; color: var(--accent-green); line-height: 1; }
     
-    /* Barras de InBody Estilo Reporte */
     .inbody-bar-group { margin-bottom: 0.8rem; }
     .inbody-bar-label { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.2rem; }
     .inbody-bar-bg { background: #0f172a; height: 14px; border-radius: 7px; border: 1px solid var(--border-color); overflow: hidden; position: relative; }
     .inbody-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent-blue), var(--accent-green)); width: 0%; transition: width 0.5s ease; }
 
-    .segmental-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.5rem; }
-    .segment-card { background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.6rem; text-align: center; }
+    /* Silueta Segmental */
+    .silhouette-container { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-top: 1rem; }
+    .silhouette-box { position: relative; width: 280px; height: 380px; background: #0f172a; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px; text-align: center; }
+    .silhouette-title { font-size: 0.85rem; font-weight: bold; color: var(--accent-blue); margin-bottom: 5px; }
+    .silhouette-svg { width: 100%; height: 320px; }
+    .seg-tag { position: absolute; background: rgba(30, 41, 59, 0.92); border: 1px solid var(--accent-blue); border-radius: 6px; padding: 3px 6px; font-size: 0.72rem; text-align: center; min-width: 65px; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+    .seg-tag .val { font-weight: bold; color: var(--accent-green); }
+    .seg-tag .pct { color: var(--text-light); font-size: 0.68rem; }
+
+    /* Cronómetro UI */
+    .timer-display { font-size: 2.5rem; font-family: monospace; font-weight: bold; color: var(--accent-green); text-align: center; background: #0f172a; border: 1px solid var(--border-color); border-radius: 10px; padding: 0.5rem; margin-bottom: 0.8rem; }
+    .timer-controls { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
 
     /* Tablas & Gráficos */
     .table-container { overflow-x: auto; margin-top: 1rem; }
@@ -132,7 +139,7 @@
 <body>
 
   <!-- Marcador Versión Sistema -->
-  <div class="app-version-badge" id="app-version-tag">v2026.09.1</div>
+  <div class="app-version-badge" id="app-version-tag">v2026.09.2</div>
 
   <!-- Loader OCR -->
   <div id="ocr-loader">
@@ -145,13 +152,6 @@
   <header class="app-bar">
     <button class="btn-menu" id="menu-toggle">☰</button>
     <div class="app-bar-title"><span>🏋️</span> <span id="app-title-text">GymRats</span></div>
-    
-    <div class="active-user-container">
-      <span>👤</span>
-      <select id="global-active-user" class="active-user-select" onchange="setActiveUser(this.value)">
-        <option value="">Atleta...</option>
-      </select>
-    </div>
   </header>
 
   <!-- Menú Lateral -->
@@ -289,6 +289,24 @@
             <div style="flex: 1;"><label>Tasa Metabólica Basal (kcal)</label><input type="number" id="inbody-tmb" class="form-control" placeholder="1606"></div>
           </div>
 
+          <div style="font-size:0.9rem; font-weight:bold; color:var(--accent-blue); margin: 0.8rem 0 0.4rem 0;">Análisis de Masa Magra Segmental</div>
+          <div class="form-row form-group">
+            <div style="flex: 1;"><label>Brazo Izq (kg / %)</label><input type="text" id="inbody-magra-bi" class="form-control" placeholder="3.42 kg / 109.4%"></div>
+            <div style="flex: 1;"><label>Brazo Der (kg / %)</label><input type="text" id="inbody-magra-bd" class="form-control" placeholder="3.44 kg / 109.9%"></div>
+            <div style="flex: 1;"><label>Tronco (kg / %)</label><input type="text" id="inbody-magra-tr" class="form-control" placeholder="26.7 kg / 107.2%"></div>
+            <div style="flex: 1;"><label>Pierna Izq (kg / %)</label><input type="text" id="inbody-magra-pi" class="form-control" placeholder="8.25 kg / 94.9%"></div>
+            <div style="flex: 1;"><label>Pierna Der (kg / %)</label><input type="text" id="inbody-magra-pd" class="form-control" placeholder="8.10 kg / 93.1%"></div>
+          </div>
+
+          <div style="font-size:0.9rem; font-weight:bold; color:var(--accent-blue); margin: 0.8rem 0 0.4rem 0;">Análisis de Grasa Segmental</div>
+          <div class="form-row form-group">
+            <div style="flex: 1;"><label>Brazo Izq (kg / %)</label><input type="text" id="inbody-grasa-bi" class="form-control" placeholder="0.7 kg / 123.8%"></div>
+            <div style="flex: 1;"><label>Brazo Der (kg / %)</label><input type="text" id="inbody-grasa-bd" class="form-control" placeholder="0.7 kg / 122.6%"></div>
+            <div style="flex: 1;"><label>Tronco (kg / %)</label><input type="text" id="inbody-grasa-tr" class="form-control" placeholder="8.0 kg / 197.9%"></div>
+            <div style="flex: 1;"><label>Pierna Izq (kg / %)</label><input type="text" id="inbody-grasa-pi" class="form-control" placeholder="1.9 kg / 118.8%"></div>
+            <div style="flex: 1;"><label>Pierna Der (kg / %)</label><input type="text" id="inbody-grasa-pd" class="form-control" placeholder="1.9 kg / 118.0%"></div>
+          </div>
+
           <button type="submit" class="btn btn-success">💾 Guardar Evaluación InBody</button>
         </form>
       </div>
@@ -327,6 +345,44 @@
             </div>
           </div>
 
+          <!-- VISTA DESGLOSE SEGMENTAL CON SILUETA -->
+          <div style="margin-bottom: 1.5rem;">
+            <div style="font-weight: bold; color: var(--accent-blue); margin-bottom: 0.6rem; font-size: 0.95rem;">Análisis Segmental de Masa Magra y Grasa</div>
+            <div class="silhouette-container">
+              
+              <!-- Silueta Masa Magra -->
+              <div class="silhouette-box">
+                <div class="silhouette-title">Masa Magra Segmental</div>
+                <div class="seg-tag" style="top: 80px; left: 10px;" id="tag-magra-bi"><div class="val">-</div><div class="pct">Izq</div></div>
+                <div class="seg-tag" style="top: 80px; right: 10px;" id="tag-magra-bd"><div class="val">-</div><div class="pct">Der</div></div>
+                <div class="seg-tag" style="top: 130px; left: 107px;" id="tag-magra-tr"><div class="val">-</div><div class="pct">Tronco</div></div>
+                <div class="seg-tag" style="bottom: 40px; left: 20px;" id="tag-magra-pi"><div class="val">-</div><div class="pct">Izq</div></div>
+                <div class="seg-tag" style="bottom: 40px; right: 20px;" id="tag-magra-pd"><div class="val">-</div><div class="pct">Der</div></div>
+                
+                <svg class="silhouette-svg" viewBox="0 0 100 150" fill="none" stroke="#38bdf8" stroke-width="1.5">
+                  <circle cx="50" cy="18" r="10" />
+                  <path d="M50 28 L50 75 M30 38 L70 38 M30 38 L20 70 M70 38 L80 70 M50 75 L35 130 M50 75 L65 130" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+
+              <!-- Silueta Grasa Segmental -->
+              <div class="silhouette-box">
+                <div class="silhouette-title">Grasa Segmental</div>
+                <div class="seg-tag" style="top: 80px; left: 10px;" id="tag-grasa-bi"><div class="val">-</div><div class="pct">Izq</div></div>
+                <div class="seg-tag" style="top: 80px; right: 10px;" id="tag-grasa-bd"><div class="val">-</div><div class="pct">Der</div></div>
+                <div class="seg-tag" style="top: 130px; left: 107px;" id="tag-grasa-tr"><div class="val">-</div><div class="pct">Tronco</div></div>
+                <div class="seg-tag" style="bottom: 40px; left: 20px;" id="tag-grasa-pi"><div class="val">-</div><div class="pct">Izq</div></div>
+                <div class="seg-tag" style="bottom: 40px; right: 20px;" id="tag-grasa-pd"><div class="val">-</div><div class="pct">Der</div></div>
+
+                <svg class="silhouette-svg" viewBox="0 0 100 150" fill="none" stroke="#fb923c" stroke-width="1.5">
+                  <circle cx="50" cy="18" r="10" />
+                  <path d="M50 28 L50 75 M30 38 L70 38 M30 38 L20 70 M70 38 L80 70 M50 75 L35 130 M50 75 L65 130" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+
+            </div>
+          </div>
+
           <!-- Gráficos de Histórico -->
           <div class="card" style="background: #0f172a; margin-bottom: 1rem;">
             <div style="font-size:0.9rem; font-weight:bold; color:var(--accent-blue); margin-bottom: 0.5rem;">📈 Histórico de Composición Corporal</div>
@@ -349,6 +405,18 @@
     <section id="view-suspension" class="view-section">
       <div class="card">
         <div class="card-title">⏱️ Registro de Tiempos - Suspensión Dinámica</div>
+        
+        <!-- CRONÓMETRO INTEGRADO -->
+        <div style="background: #0f172a; border: 1px solid var(--border-color); border-radius: 10px; padding: 1rem; margin-bottom: 1rem;">
+          <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; text-align: center; font-weight: bold;">CRONÓMETRO DE SUSPENSIÓN</div>
+          <div class="timer-display" id="timer-display">00:00.00</div>
+          <div class="timer-controls">
+            <button type="button" class="btn btn-success" onclick="startTimer()">▶️ Iniciar</button>
+            <button type="button" class="btn btn-secondary" onclick="pauseTimer()">⏸️ Pausa</button>
+            <button type="button" class="btn btn-danger" onclick="resetTimer()">🔄 Reiniciar</button>
+          </div>
+        </div>
+
         <form id="time-form">
           <div class="form-group">
             <label>Atleta</label>
@@ -451,7 +519,6 @@
               <label>Carga / Peso</label>
               <input type="number" step="0.5" id="workout-weight" class="form-control" placeholder="150" oninput="calculate1RM()" required>
             </div>
-            <!-- SELECCIÓN DE DIMENSIONAL SOLICITADA -->
             <div style="flex: 0.8; min-width: 100px;">
               <label>Unidad</label>
               <select id="workout-unit" class="form-control" onchange="calculate1RM()">
@@ -680,33 +747,11 @@
       filterAnalyticsExercises();
     });
 
-    // Gestión del Atleta Activo
-    window.setActiveUser = function(userName) {
-      if (userName) {
-        localStorage.setItem('gymrats_active_user', userName);
-      } else {
-        localStorage.removeItem('gymrats_active_user');
-      }
-      applyActiveUserToForms();
-      renderInBodyProfile();
-    };
-
-    function applyActiveUserToForms() {
-      const activeUser = localStorage.getItem('gymrats_active_user');
-      if (activeUser) {
-        ['global-active-user', 'select-user-suspension', 'select-user-workout', 'inbody-user-select'].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.value = activeUser;
-        });
-      }
-    }
-
     function updateSelects() {
       const selects = [
         document.getElementById('select-user-suspension'), 
         document.getElementById('select-user-workout'),
         document.getElementById('analytics-user'),
-        document.getElementById('global-active-user'),
         document.getElementById('inbody-user-select')
       ];
       selects.forEach((sel, idx) => {
@@ -714,8 +759,6 @@
         const currentVal = sel.value;
         if (idx === 2) {
           sel.innerHTML = '<option value="ALL">-- Todos los Atletas --</option>';
-        } else if (idx === 3) {
-          sel.innerHTML = '<option value="">Atleta...</option>';
         } else {
           sel.innerHTML = '<option value="">-- Selecciona Atleta --</option>';
         }
@@ -727,7 +770,6 @@
         });
         if (currentVal) sel.value = currentVal;
       });
-      applyActiveUserToForms();
     }
 
     // Catálogo Ejercicios
@@ -822,7 +864,7 @@
     };
 
     // -------------------------------------------------------------
-    // FUNCIONALIDAD OCR INBODY (Tesseract.js)
+    // FUNCIONALIDAD OCR INBODY (Tesseract.js Ajustado)
     // -------------------------------------------------------------
     window.processInBodyImage = function(event) {
       const file = event.target.files[0];
@@ -851,20 +893,33 @@
         return match ? parseFloat(match[1].replace(',', '.')) : null;
       };
 
-      // Expresiones regulares para mapeo de datos de la balanza
       const peso = extractNum(/Peso\s*\(kg\)\s*(\d+[\.,]\d+)/i) || extractNum(/(\d{2,3}[\.,]\d)\s*kg/i);
       const mme = extractNum(/MME\s*\(kg\)\s*(\d+[\.,]\d+)/i) || extractNum(/Masa MÚsculo EsquelÉtica\s*(\d+[\.,]\d+)/i);
       const grasaKg = extractNum(/Masa Grasa Corporal\s*\(kg\)\s*(\d+[\.,]\d+)/i);
       const pgc = extractNum(/PGC\s*\(\%\)\s*(\d+[\.,]\d+)/i) || extractNum(/Porcentaje de Grasa Corporal\s*(\d+[\.,]\d+)/i);
       const score = extractNum(/Puntuación InBody\s*(\d+)\/100/i) || extractNum(/(\d{2})\/100\s*Puntos/i);
+      const imc = extractNum(/IMC\s*\(kg\/m²\)\s*(\d+[\.,]\d+)/i);
+      const agua = extractNum(/Agua Corporal Total\s*\(L\)\s*(\d+[\.,]\d+)/i);
+      const proteinas = extractNum(/Proteínas\s*\(kg\)\s*(\d+[\.,]\d+)/i);
+      const minerales = extractNum(/Minerales\s*\(kg\)\s*(\d+[\.,]\d+)/i);
+      const rcc = extractNum(/Relación Cintura-Cadera\s*(\d+[\.,]\d+)/i);
+      const visceral = extractNum(/Nivel de Grasa Visceral\s*(\d+)/i);
+      const tmb = extractNum(/Tasa Metabólica BÁsal\s*(\d+)\s*kcal/i);
 
       if (peso) document.getElementById('inbody-peso').value = peso;
       if (mme) document.getElementById('inbody-mme').value = mme;
       if (grasaKg) document.getElementById('inbody-grasa-kg').value = grasaKg;
       if (pgc) document.getElementById('inbody-pgc').value = pgc;
       if (score) document.getElementById('inbody-score').value = score;
+      if (imc) document.getElementById('inbody-imc').value = imc;
+      if (agua) document.getElementById('inbody-agua').value = agua;
+      if (proteinas) document.getElementById('inbody-proteinas').value = proteinas;
+      if (minerales) document.getElementById('inbody-minerales').value = minerales;
+      if (rcc) document.getElementById('inbody-rcc').value = rcc;
+      if (visceral) document.getElementById('inbody-visceral').value = visceral;
+      if (tmb) document.getElementById('inbody-tmb').value = tmb;
 
-      alert("Escaneo InBody finalizado. Revisa los campos importados.");
+      alert("Escaneo InBody procesado. Revisa y verifica las casillas rellenas.");
     }
 
     // FORMULARIO E HISTORIAL INBODY
@@ -889,7 +944,21 @@
         minerales: parseFloat(document.getElementById('inbody-minerales').value) || 0,
         rcc: parseFloat(document.getElementById('inbody-rcc').value) || 0,
         visceral: parseInt(document.getElementById('inbody-visceral').value) || 0,
-        tmb: parseInt(document.getElementById('inbody-tmb').value) || 0
+        tmb: parseInt(document.getElementById('inbody-tmb').value) || 0,
+        segmentalMagra: {
+          bi: document.getElementById('inbody-magra-bi').value || '-',
+          bd: document.getElementById('inbody-magra-bd').value || '-',
+          tr: document.getElementById('inbody-magra-tr').value || '-',
+          pi: document.getElementById('inbody-magra-pi').value || '-',
+          pd: document.getElementById('inbody-magra-pd').value || '-'
+        },
+        segmentalGrasa: {
+          bi: document.getElementById('inbody-grasa-bi').value || '-',
+          bd: document.getElementById('inbody-grasa-bd').value || '-',
+          tr: document.getElementById('inbody-grasa-tr').value || '-',
+          pi: document.getElementById('inbody-grasa-pi').value || '-',
+          pd: document.getElementById('inbody-grasa-pd').value || '-'
+        }
       };
 
       try {
@@ -899,7 +968,7 @@
       } catch (err) { alert("Error guardando datos: " + err.message); }
     });
 
-    // RENDERIZADO GRÁFICO E HISTORIAL INBODY
+    // RENDERIZADO GRÁFICO E HISTORIAL INBODY CON SILUETA
     const ctxInbodyHist = document.getElementById('inbodyHistoryChart').getContext('2d');
     let inbodyHistChart = new Chart(ctxInbodyHist, {
       type: 'line',
@@ -939,7 +1008,6 @@
         const latest = userLogs[userLogs.length - 1];
         document.getElementById('render-score').textContent = `${latest.score} / 100`;
 
-        // Llenar Barras del Informe
         document.getElementById('label-peso').textContent = `${latest.peso} kg`;
         document.getElementById('bar-peso').style.width = `${Math.min((latest.peso / 100) * 100, 100)}%`;
 
@@ -948,9 +1016,25 @@
 
         document.getElementById('label-grasa').textContent = `${latest.grasaKg} kg (${latest.pgc}%)`;
         document.getElementById('bar-grasa').style.width = `${Math.min((latest.grasaKg / 40) * 100, 100)}%`;
+
+        // Renderizado de la silueta segmental
+        if (latest.segmentalMagra) {
+          document.getElementById('tag-magra-bi').querySelector('.val').textContent = latest.segmentalMagra.bi;
+          document.getElementById('tag-magra-bd').querySelector('.val').textContent = latest.segmentalMagra.bd;
+          document.getElementById('tag-magra-tr').querySelector('.val').textContent = latest.segmentalMagra.tr;
+          document.getElementById('tag-magra-pi').querySelector('.val').textContent = latest.segmentalMagra.pi;
+          document.getElementById('tag-magra-pd').querySelector('.val').textContent = latest.segmentalMagra.pd;
+        }
+
+        if (latest.segmentalGrasa) {
+          document.getElementById('tag-grasa-bi').querySelector('.val').textContent = latest.segmentalGrasa.bi;
+          document.getElementById('tag-grasa-bd').querySelector('.val').textContent = latest.segmentalGrasa.bd;
+          document.getElementById('tag-grasa-tr').querySelector('.val').textContent = latest.segmentalGrasa.tr;
+          document.getElementById('tag-grasa-pi').querySelector('.val').textContent = latest.segmentalGrasa.pi;
+          document.getElementById('tag-grasa-pd').querySelector('.val').textContent = latest.segmentalGrasa.pd;
+        }
       }
 
-      // Actualizar Gráficas
       inbodyHistChart.data.datasets = [
         { label: 'Peso (kg)', data: userLogs.map(l => ({ x: l.date, y: l.peso })), borderColor: '#38bdf8' },
         { label: 'MME (kg)', data: userLogs.map(l => ({ x: l.date, y: l.mme })), borderColor: '#4ade80' },
@@ -980,6 +1064,54 @@
       };
       html2pdf().set(opt).from(element).save();
     };
+
+    // LÓGICA CRONÓMETRO SUSPENSIÓN
+    let timerInterval = null;
+    let timerStartTime = 0;
+    let timerElapsedTime = 0;
+
+    window.startTimer = function() {
+      if (timerInterval) return;
+      timerStartTime = Date.now() - timerElapsedTime;
+      timerInterval = setInterval(() => {
+        timerElapsedTime = Date.now() - timerStartTime;
+        updateTimerDisplay(timerElapsedTime);
+      }, 10);
+    };
+
+    window.pauseTimer = function() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      syncTimerToForm();
+    };
+
+    window.resetTimer = function() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      timerElapsedTime = 0;
+      updateTimerDisplay(0);
+      document.getElementById('minutes').value = 0;
+      document.getElementById('seconds').value = 0;
+      document.getElementById('millis').value = 0;
+    };
+
+    function updateTimerDisplay(msTotal) {
+      const mins = Math.floor(msTotal / 60000);
+      const secs = Math.floor((msTotal % 60000) / 1000);
+      const ms = Math.floor((msTotal % 1000) / 10);
+      document.getElementById('timer-display').textContent = 
+        `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(ms).padStart(2, '0')}`;
+    }
+
+    function syncTimerToForm() {
+      const mins = Math.floor(timerElapsedTime / 60000);
+      const secs = Math.floor((timerElapsedTime % 60000) / 1000);
+      const ms = timerElapsedTime % 1000;
+
+      document.getElementById('minutes').value = mins;
+      document.getElementById('seconds').value = secs;
+      document.getElementById('millis').value = ms;
+    }
 
     // CALCULO DE 1RM CON SELECCION DE UNIDAD (LB / KG)
     window.calculate1RM = function() {
@@ -1098,7 +1230,6 @@
       const uniqueDates = [...new Set(records.map(r => r.date))].sort((a, b) => new Date(a) - new Date(b));
       const tableHeaders = document.getElementById('table-headers');
       const tableBody = document.getElementById('records-table-body');
-      const tableFooter = document.getElementById('table-footer');
 
       tableHeaders.innerHTML = '<th class="sticky-col">Atleta</th>';
       uniqueDates.forEach(d => { const p = d.split('-'); tableHeaders.innerHTML += `<th>${p[2]}/${p[1]}/${p[0]}</th>`; });
