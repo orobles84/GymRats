@@ -9,6 +9,13 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- PDF.js para Escaneo de Reportes PDF InBody y SECA mBCA -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
 
   <style>
     :root {
@@ -103,6 +110,131 @@
     .inbody-bar-bg { background: #0f172a; height: 14px; border-radius: 7px; border: 1px solid var(--border-color); overflow: hidden; position: relative; }
     .inbody-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent-blue), var(--accent-green)); width: 0%; transition: width 0.5s ease; }
 
+    /* Semáforo & Gauge Styles InBody / SECA mBCA */
+    .gauge-card-block {
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1.2rem;
+    }
+    .gauge-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.9rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .gauge-card-title {
+      font-weight: bold;
+      color: var(--accent-blue);
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .gauge-scale-legend {
+      display: flex;
+      width: 260px;
+      border-radius: 4px;
+      overflow: hidden;
+      font-size: 0.7rem;
+      font-weight: bold;
+      text-align: center;
+      border: 1px solid var(--border-color);
+    }
+    .scale-tab-low { flex: 1; background: rgba(56, 189, 248, 0.22); color: #38bdf8; border-right: 1px solid rgba(255,255,255,0.1); padding: 2px 0; }
+    .scale-tab-norm { flex: 1.35; background: rgba(34, 197, 94, 0.25); color: #4ade80; border-right: 1px solid rgba(255,255,255,0.1); padding: 2px 0; }
+    .scale-tab-high { flex: 1; background: rgba(239, 68, 68, 0.22); color: #f87171; padding: 2px 0; }
+
+    .inbody-gauge-row {
+      margin-bottom: 0.95rem;
+      padding-bottom: 0.85rem;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.45);
+    }
+    .inbody-gauge-row:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+    .inbody-gauge-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.84rem;
+      margin-bottom: 0.35rem;
+    }
+    .inbody-gauge-name {
+      font-weight: 600;
+      color: var(--text-light);
+    }
+    .inbody-gauge-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .inbody-gauge-val {
+      font-weight: bold;
+      font-size: 0.9rem;
+      color: #ffffff;
+    }
+    .gauge-badge {
+      font-size: 0.68rem;
+      font-weight: bold;
+      padding: 1px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .badge-bajo { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #38bdf8; }
+    .badge-normal { background: rgba(34, 197, 94, 0.25); color: #4ade80; border: 1px solid #4ade80; }
+    .badge-alto { background: rgba(239, 68, 68, 0.25); color: #f87171; border: 1px solid #f87171; }
+
+    .gauge-track-wrapper {
+      position: relative;
+      width: 100%;
+      height: 16px;
+      background: #090e17;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      overflow: visible;
+    }
+    .gauge-segment-low { width: 30%; height: 100%; background: rgba(56, 189, 248, 0.16); border-right: 1px dashed rgba(255,255,255,0.2); border-radius: 7px 0 0 7px; }
+    .gauge-segment-norm { width: 40%; height: 100%; background: rgba(34, 197, 94, 0.22); border-right: 1px dashed rgba(255,255,255,0.2); }
+    .gauge-segment-high { width: 30%; height: 100%; background: rgba(239, 68, 68, 0.16); border-radius: 0 7px 7px 0; }
+
+    .gauge-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0%;
+      border-radius: 8px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      opacity: 0.88;
+      pointer-events: none;
+    }
+    .fill-bajo { background: linear-gradient(90deg, rgba(56,189,248,0.4), #38bdf8); }
+    .fill-normal { background: linear-gradient(90deg, #38bdf8, #22c55e); }
+    .fill-alto { background: linear-gradient(90deg, #38bdf8, #22c55e 55%, #ef4444); }
+
+    .gauge-pin {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2px solid #0f172a;
+      box-shadow: 0 0 6px rgba(0,0,0,0.8), 0 0 4px #ffffff;
+      z-index: 5;
+      transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      left: 0%;
+    }
+
     .silhouette-container { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-top: 1rem; }
     .silhouette-box { position: relative; width: 280px; height: 380px; background: #0f172a; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px; text-align: center; }
     .silhouette-title { font-size: 0.85rem; font-weight: bold; color: var(--accent-blue); margin-bottom: 5px; }
@@ -130,13 +262,18 @@
     .spinner { border: 4px solid var(--border-color); border-top: 4px solid var(--accent-blue); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+    /* Tabs y Botones de Alternancia */
+    .view-toggle-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .view-tab-btn { flex: 1; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border-color); background: #0f172a; color: var(--text-muted); font-weight: bold; cursor: pointer; transition: all 0.2s; }
+    .view-tab-btn.active { background: #1e293b; color: var(--accent-blue); border-color: var(--accent-blue); }
+
     .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; }
   </style>
 </head>
 <body>
 
   <!-- Versión del Software Actualizada -->
-  <div class="app-version-badge" id="app-version-tag">v2026.09.6 AI Vision</div>
+  <div class="app-version-badge" id="app-version-tag">v2026.09.7 InBody & Seca AI Vision</div>
 
   <!-- Loader del Escáner Multimodal -->
   <div id="ai-loader">
@@ -280,15 +417,15 @@
       </div>
     </section>
 
-    <!-- 4. SECCIÓN INBODY Y GEMINI AI VISION (v2026.09.6) -->
+    <!-- 4. SECCIÓN INBODY Y SECA AI VISION (v2026.09.7) -->
     <section id="view-inbody" class="view-section">
       
       <!-- Selector de Atleta & Acciones Rápidas -->
       <div class="card">
         <div class="card-title">
-          <span>📊 Histórico InBody de Composición Corporal</span>
+          <span>📊 Histórico de Composición Corporal (InBody / SECA mBCA)</span>
           <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-            <button class="btn btn-purple" style="width:auto; padding: 0.4rem 0.9rem; font-size: 0.85rem;" onclick="document.getElementById('inbody-file-input').click()">📸 Escanear con IA</button>
+            <button class="btn btn-purple" style="width:auto; padding: 0.4rem 0.9rem; font-size: 0.85rem;" onclick="document.getElementById('inbody-file-input').click()">📸 Escanear con IA (Foto / PDF)</button>
             <button class="btn btn-secondary" style="width:auto; padding: 0.4rem 0.9rem; font-size: 0.85rem;" onclick="toggleInBodyForm()">➕ Registrar / Modificar</button>
           </div>
         </div>
@@ -297,13 +434,13 @@
           <label style="font-weight:bold; color:var(--accent-blue);">Selecciona el Atleta para Consultar Histórico:</label>
           <select id="inbody-user-select" class="form-control" onchange="handleInBodyAthleteChange()"></select>
         </div>
-        <input type="file" id="inbody-file-input" accept="image/*" capture="environment" style="display: none;" onchange="processInBodyGemini(event)">
+        <input type="file" id="inbody-file-input" accept="image/*,application/pdf" style="display: none;" onchange="processInBodyGemini(event)">
       </div>
 
-      <!-- FORMULARIO COLAPSABLE DE INGRESO / EDICIÓN INBODY -->
+      <!-- FORMULARIO COLAPSABLE DE INGRESO / EDICIÓN INBODY / SECA -->
       <div class="card" id="inbody-form-card" style="display: none;">
         <div class="card-title">
-          <span>📝 Formulario de Evaluación InBody</span>
+          <span>📝 Formulario de Evaluación InBody / SECA</span>
           <button class="btn btn-secondary" style="width: auto; padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="toggleInBodyForm()">✕ Cerrar</button>
         </div>
 
@@ -433,23 +570,117 @@
               <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;" id="detail-eval-date">Evaluación del --/--/----</div>
             </div>
 
-            <!-- Barras Músculo - Grasa -->
-            <div style="margin-bottom: 1.2rem; background: #0f172a; padding: 1rem; border-radius: 10px; border: 1px solid var(--border-color);">
-              <div style="font-weight: bold; color: var(--accent-blue); margin-bottom: 0.6rem; font-size: 0.95rem;">Análisis Músculo - Grasa</div>
+            <!-- 1. Análisis Músculo - Grasa con Barra Semáforo (Bajo, Normal, Alto) -->
+            <div class="gauge-card-block">
+              <div class="gauge-card-header">
+                <div class="gauge-card-title">💪 Análisis Músculo - Grasa</div>
+                <div class="gauge-scale-legend">
+                  <div class="scale-tab-low">Bajo</div>
+                  <div class="scale-tab-norm">Normal</div>
+                  <div class="scale-tab-high">Alto</div>
+                </div>
+              </div>
               
-              <div class="inbody-bar-group">
-                <div class="inbody-bar-label"><span>Peso Corporal</span><span id="detail-label-peso">0.0 kg</span></div>
-                <div class="inbody-bar-bg"><div class="inbody-bar-fill" id="detail-bar-peso"></div></div>
+              <!-- Fila: Peso Corporal -->
+              <div class="inbody-gauge-row">
+                <div class="inbody-gauge-top">
+                  <span class="inbody-gauge-name">Peso Corporal</span>
+                  <div class="inbody-gauge-right">
+                    <span class="inbody-gauge-val" id="detail-label-peso">0.0 kg</span>
+                    <span class="gauge-badge badge-normal" id="detail-badge-peso">Normal</span>
+                  </div>
+                </div>
+                <div class="gauge-track-wrapper">
+                  <div class="gauge-segment-low"></div>
+                  <div class="gauge-segment-norm"></div>
+                  <div class="gauge-segment-high"></div>
+                  <div class="gauge-fill fill-normal" id="detail-bar-peso"></div>
+                  <div class="gauge-pin" id="detail-pin-peso"></div>
+                </div>
               </div>
 
-              <div class="inbody-bar-group">
-                <div class="inbody-bar-label"><span>MME (Masa Músculo Esquelética)</span><span id="detail-label-mme">0.0 kg</span></div>
-                <div class="inbody-bar-bg"><div class="inbody-bar-fill" id="detail-bar-mme" style="background: linear-gradient(90deg, #38bdf8, #a855f7);"></div></div>
+              <!-- Fila: MME -->
+              <div class="inbody-gauge-row">
+                <div class="inbody-gauge-top">
+                  <span class="inbody-gauge-name">MME (Masa Músculo Esquelética)</span>
+                  <div class="inbody-gauge-right">
+                    <span class="inbody-gauge-val" id="detail-label-mme">0.0 kg</span>
+                    <span class="gauge-badge badge-normal" id="detail-badge-mme">Normal</span>
+                  </div>
+                </div>
+                <div class="gauge-track-wrapper">
+                  <div class="gauge-segment-low"></div>
+                  <div class="gauge-segment-norm"></div>
+                  <div class="gauge-segment-high"></div>
+                  <div class="gauge-fill fill-normal" id="detail-bar-mme"></div>
+                  <div class="gauge-pin" id="detail-pin-mme"></div>
+                </div>
               </div>
 
-              <div class="inbody-bar-group">
-                <div class="inbody-bar-label"><span>Masa Grasa Corporal</span><span id="detail-label-grasa">0.0 kg</span></div>
-                <div class="inbody-bar-bg"><div class="inbody-bar-fill" id="detail-bar-grasa" style="background: linear-gradient(90deg, #fb923c, #f43f5e);"></div></div>
+              <!-- Fila: Masa Grasa Corporal -->
+              <div class="inbody-gauge-row">
+                <div class="inbody-gauge-top">
+                  <span class="inbody-gauge-name">Masa Grasa Corporal</span>
+                  <div class="inbody-gauge-right">
+                    <span class="inbody-gauge-val" id="detail-label-grasa">0.0 kg</span>
+                    <span class="gauge-badge badge-normal" id="detail-badge-grasa">Normal</span>
+                  </div>
+                </div>
+                <div class="gauge-track-wrapper">
+                  <div class="gauge-segment-low"></div>
+                  <div class="gauge-segment-norm"></div>
+                  <div class="gauge-segment-high"></div>
+                  <div class="gauge-fill fill-normal" id="detail-bar-grasa"></div>
+                  <div class="gauge-pin" id="detail-pin-grasa"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Análisis de Obesidad con Barra Semáforo (Bajo, Normal, Alto) -->
+            <div class="gauge-card-block">
+              <div class="gauge-card-header">
+                <div class="gauge-card-title">⚖️ Análisis de Obesidad</div>
+                <div class="gauge-scale-legend">
+                  <div class="scale-tab-low">Bajo</div>
+                  <div class="scale-tab-norm">Normal</div>
+                  <div class="scale-tab-high">Alto</div>
+                </div>
+              </div>
+
+              <!-- Fila: IMC -->
+              <div class="inbody-gauge-row">
+                <div class="inbody-gauge-top">
+                  <span class="inbody-gauge-name">IMC (Índice de Masa Corporal)</span>
+                  <div class="inbody-gauge-right">
+                    <span class="inbody-gauge-val" id="detail-label-gauge-imc">0.0 kg/m²</span>
+                    <span class="gauge-badge badge-normal" id="detail-badge-imc">Normal</span>
+                  </div>
+                </div>
+                <div class="gauge-track-wrapper">
+                  <div class="gauge-segment-low"></div>
+                  <div class="gauge-segment-norm"></div>
+                  <div class="gauge-segment-high"></div>
+                  <div class="gauge-fill fill-normal" id="detail-bar-imc"></div>
+                  <div class="gauge-pin" id="detail-pin-imc"></div>
+                </div>
+              </div>
+
+              <!-- Fila: PGC -->
+              <div class="inbody-gauge-row">
+                <div class="inbody-gauge-top">
+                  <span class="inbody-gauge-name">PGC (Porcentaje de Grasa Corporal)</span>
+                  <div class="inbody-gauge-right">
+                    <span class="inbody-gauge-val" id="detail-label-gauge-pgc">0.0%</span>
+                    <span class="gauge-badge badge-normal" id="detail-badge-pgc">Normal</span>
+                  </div>
+                </div>
+                <div class="gauge-track-wrapper">
+                  <div class="gauge-segment-low"></div>
+                  <div class="gauge-segment-norm"></div>
+                  <div class="gauge-segment-high"></div>
+                  <div class="gauge-fill fill-normal" id="detail-bar-pgc"></div>
+                  <div class="gauge-pin" id="detail-pin-pgc"></div>
+                </div>
               </div>
             </div>
 
@@ -1142,7 +1373,7 @@
       });
     }
 
-    // Escáner Multimodal con Gemini AI Vision
+    // Escáner Multimodal con Gemini AI Vision (Compatible con InBody y SECA mBCA - Foto o PDF)
     window.processInBodyGemini = async function(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -1150,14 +1381,44 @@
       const loader = document.getElementById('ai-loader');
       const statusText = document.getElementById('ai-status');
       loader.style.display = 'flex';
-      statusText.textContent = "Comprimiendo imagen para subida rápida a Render...";
+
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
 
       try {
-        const compressedBlob = await compressImage(file);
-        statusText.textContent = "Conectando con Gemini AI en Render... (Si el servidor estaba inactivo, puede demorar unos segundos en despertar)";
+        let uploadBlob;
+        let uploadName = 'inbody.jpg';
+
+        if (isPdf) {
+          statusText.textContent = "Preparando documento PDF (InBody / SECA mBCA)...";
+          // Convertir la primera página del PDF a imagen JPEG de alta resolución con PDF.js
+          if (window.pdfjsLib) {
+            statusText.textContent = "Extrayendo hoja de reporte del PDF en alta resolución con IA...";
+            const arrayBuffer = await file.arrayBuffer();
+            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+            const pdfDoc = await loadingTask.promise;
+            const page = await pdfDoc.getPage(1);
+            const viewport = page.getViewport({ scale: 2.2 });
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const ctx = canvas.getContext('2d');
+            await page.render({ canvasContext: ctx, viewport }).promise;
+            uploadBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.90));
+            uploadName = file.name.replace(/\.pdf$/i, '.jpg');
+          } else {
+            uploadBlob = file;
+            uploadName = file.name || 'document.pdf';
+          }
+        } else {
+          statusText.textContent = "Comprimiendo imagen para subida rápida a Render...";
+          uploadBlob = await compressImage(file);
+          uploadName = file.name || 'inbody.jpg';
+        }
+
+        statusText.textContent = "Conectando con Gemini AI en Render... (Analizando parámetros InBody / SECA)";
 
         const formData = new FormData();
-        formData.append('image', compressedBlob, 'inbody.jpg');
+        formData.append('image', uploadBlob, uploadName);
 
         const response = await fetch('https://gymrats-backend-d6h0.onrender.com/api/scan-inbody', {
           method: 'POST',
@@ -1171,13 +1432,13 @@
           // Abre el formulario y rellena las casillas
           document.getElementById('inbody-form-card').style.display = 'block';
           fillInBodyForm(result.data);
-          alert("✨ Hoja de InBody procesada exitosamente con Gemini AI. Verifica los valores y haz clic en Guardar Evaluación.");
+          alert("✨ Hoja de evaluación (InBody / SECA mBCA) procesada exitosamente con Gemini AI. Verifica los valores y haz clic en Guardar Evaluación.");
         } else {
-          alert("No se pudo procesar la imagen: " + (result.error || "Formato no válido"));
+          alert("No se pudo procesar el reporte: " + (result.error || "Formato no válido"));
         }
       } catch (err) {
         loader.style.display = 'none';
-        alert("Error de conexión al procesar la imagen con Gemini en Render: " + err.message);
+        alert("Error de conexión al procesar el documento con Gemini en Render: " + err.message);
       } finally {
         event.target.value = '';
       }
@@ -1401,6 +1662,59 @@
       });
     }
 
+    // Función auxiliar para actualizar los indicadores semáforo (Bajo, Normal, Alto)
+    function updateTrafficGauge(key, val, minVal, normMin, normMax, maxVal, unit, extraText = '') {
+      const value = parseFloat(val) || 0;
+      const labelEl = document.getElementById(key === 'imc' ? 'detail-label-gauge-imc' : (key === 'pgc' ? 'detail-label-gauge-pgc' : `detail-label-${key}`));
+      const badgeEl = document.getElementById(`detail-badge-${key}`);
+      const barEl = document.getElementById(`detail-bar-${key}`);
+      const pinEl = document.getElementById(`detail-pin-${key}`);
+
+      if (labelEl) {
+        labelEl.textContent = value > 0 ? `${value} ${unit}${extraText}` : `- ${unit}`;
+      }
+
+      if (value <= 0) {
+        if (badgeEl) { badgeEl.className = 'gauge-badge badge-normal'; badgeEl.textContent = 'Sin Datos'; }
+        if (barEl) { barEl.style.width = '0%'; barEl.className = 'gauge-fill fill-normal'; }
+        if (pinEl) { pinEl.style.left = '0%'; }
+        return;
+      }
+
+      let status = 'Normal';
+      let percent = 50;
+
+      // Mapeo semáforo estándar (InBody / SECA):
+      // Zona Bajo: 0% a 30% de la barra
+      // Zona Normal: 30% a 70% de la barra (rango saludable centrado)
+      // Zona Alto: 70% a 100% de la barra
+      if (value < normMin) {
+        status = 'Bajo';
+        const ratio = Math.max(0, (value - minVal) / (normMin - minVal));
+        percent = Math.max(4, Math.min(29, ratio * 30));
+      } else if (value <= normMax) {
+        status = 'Normal';
+        const ratio = (value - normMin) / (normMax - normMin);
+        percent = 30 + (ratio * 40);
+      } else {
+        status = 'Alto';
+        const ratio = Math.min(1, Math.max(0, (value - normMax) / (maxVal - normMax)));
+        percent = Math.min(96, 70 + (ratio * 26));
+      }
+
+      if (badgeEl) {
+        badgeEl.className = `gauge-badge badge-${status.toLowerCase()}`;
+        badgeEl.textContent = status;
+      }
+      if (barEl) {
+        barEl.style.width = `${percent}%`;
+        barEl.className = `gauge-fill fill-${status.toLowerCase()}`;
+      }
+      if (pinEl) {
+        pinEl.style.left = `${percent}%`;
+      }
+    }
+
     // ABRIR DETALLE ESPECÍFICO DE UN REGISTRO
     window.openInBodyDetail = function(logId) {
       const log = inbodyLogs.find(l => l.id === logId);
@@ -1413,19 +1727,18 @@
       const p = log.date.split('-');
       const dateFormatted = `${p[2]}/${p[1]}/${p[0]}`;
 
-      document.getElementById('detail-title-text').textContent = `📋 Informe InBody - ${log.user} (${dateFormatted})`;
+      document.getElementById('detail-title-text').textContent = `📋 Informe InBody / SECA - ${log.user} (${dateFormatted})`;
       document.getElementById('detail-eval-date').textContent = `Evaluación realizada el ${dateFormatted}`;
       document.getElementById('detail-render-score').textContent = `${log.score || 0} / 100`;
 
-      // Barras
-      document.getElementById('detail-label-peso').textContent = `${log.peso || 0} kg`;
-      document.getElementById('detail-bar-peso').style.width = `${Math.min(((log.peso || 0) / 100) * 100, 100)}%`;
+      // 1. Barras Semáforo: Análisis Músculo - Grasa
+      updateTrafficGauge('peso', log.peso, 35, 58, 78, 120, 'kg');
+      updateTrafficGauge('mme', log.mme, 15, 28, 38, 55, 'kg');
+      updateTrafficGauge('grasa', log.grasaKg, 3, 9, 17, 40, 'kg', log.pgc ? ` (${log.pgc}%)` : '');
 
-      document.getElementById('detail-label-mme').textContent = `${log.mme || 0} kg`;
-      document.getElementById('detail-bar-mme').style.width = `${Math.min(((log.mme || 0) / 50) * 100, 100)}%`;
-
-      document.getElementById('detail-label-grasa').textContent = `${log.grasaKg || 0} kg (${log.pgc || 0}%)`;
-      document.getElementById('detail-bar-grasa').style.width = `${Math.min(((log.grasaKg || 0) / 40) * 100, 100)}%`;
+      // 2. Barras Semáforo: Análisis de Obesidad
+      updateTrafficGauge('imc', log.imc, 14, 18.5, 24.9, 38, 'kg/m²');
+      updateTrafficGauge('pgc', log.pgc, 5, 10, 20, 42, '%');
 
       // Siluetas Masa Magra
       const setTag = (id, val) => {
