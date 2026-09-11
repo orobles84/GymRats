@@ -978,7 +978,7 @@
     }
 
     // -------------------------------------------------------------
-    // ESCÁNER MULTIMODAL CON GEMINI AI (REEMPLAZO DE OCR)
+    // ESCÁNER MULTIMODAL CON GEMINI AI Y CONEXIÓN A RENDER
     // -------------------------------------------------------------
     window.processInBodyGemini = async function(event) {
       const file = event.target.files[0];
@@ -991,8 +991,8 @@
       formData.append('image', file);
 
       try {
-        // Petición al endpoint del microservicio Gemini Vision (backend)
-        const response = await fetch('/api/scan-inbody', {
+        // Petición conectada a la URL desplegada en Render
+        const response = await fetch('https://gymrats-backend-d6h0.onrender.com/api/scan-inbody', {
           method: 'POST',
           body: formData
         });
@@ -1008,7 +1008,7 @@
         }
       } catch (err) {
         loader.style.display = 'none';
-        alert("Error de conexión al procesar la imagen con Gemini AI.");
+        alert("Error de conexión al procesar la imagen con Gemini AI en Render.");
       }
     };
 
