@@ -426,6 +426,7 @@
           <span>📊 Histórico de Composición Corporal (InBody / SECA mBCA)</span>
           <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
             <button class="btn btn-purple" style="width:auto; padding: 0.4rem 0.9rem; font-size: 0.85rem;" onclick="document.getElementById('inbody-file-input').click()">📸 Escanear con IA (Foto / PDF)</button>
+            <button class="btn btn-warning" id="btn-retry-inbody-scan" style="display:none; width:auto; padding: 0.4rem 0.9rem; font-size: 0.85rem; background: #d97706; color: #ffffff;" onclick="retryLastInBodyScan()">🔄 Reintentar Escaneo</button>
             <button class="btn btn-secondary" style="width:auto; padding: 0.4rem 0.9rem; font-size: 0.85rem;" onclick="toggleInBodyForm()">➕ Registrar / Modificar</button>
           </div>
         </div>
@@ -1373,6 +1374,119 @@
       });
     }
 
+    // Cache del último archivo procesado para reintentos sin volver a seleccionar archivo
+    window.lastInBodyUpload = null;
+
+    window.retryLastInBodyScan = function() {
+      if (!window.lastInBodyUpload) {
+        alert("No hay ningún reporte previo en memoria para reintentar. Por favor selecciona tu foto o PDF.");
+        return;
+      }
+      executeInBodyScan(window.lastInBodyUpload.blob, window.lastInBodyUpload.name);
+    };
+
+    // Función auxiliar para enviar la petición con reintentos automáticos si Google Gemini da error 503 / Alta Demanda
+    async function sendScanWithAutoRetry(uploadBlob, uploadName, retryCount = 0) {
+      const maxRetries = 2; // Hasta 2 reintentos automáticos (total 3 intentos)
+      const statusText = document.getElementById('ai-status');
+
+      try {
+        const formData = new FormData();
+        formData.append('image', uploadBlob, uploadName);
+
+        const response = await fetch('https://gymrats-backend-d6h0.onrender.com/api/scan-inbody', {
+          method: 'POST',
+          body: formData
+        });
+
+        let result;
+        const textResponse = await response.text();
+        try {
+          result = JSON.parse(textResponse);
+        } catch (e) {
+          result = { success: false, error: textResponse || `Error HTTP ${response.status}` };
+        }
+
+        // Detectar si el error es de sobrecarga o 503 de Gemini
+        const rawErr = typeof result.error === 'object' ? JSON.stringify(result.error) : String(result.error || '');
+        const is503OrHighDemand = response.status === 503 ||
+                                 rawErr.includes('503') ||
+                                 rawErr.toLowerCase().includes('high demand') ||
+                                 rawErr.includes('UNAVAILABLE') ||
+                                 rawErr.includes('RESOURCE_EXHAUSTED') ||
+                                 response.status === 429;
+
+        if ((!response.ok || !result.success) && is503OrHighDemand && retryCount < maxRetries) {
+          const attempt = retryCount + 1;
+          const waitTimeSec = attempt === 1 ? 2.5 : 4;
+          statusText.textContent = `⏳ Google Gemini tiene alta demanda (Error 503). Reintentando automáticamente en ${waitTimeSec}s (Intento ${attempt + 1} de 3)...`;
+          await new Promise(r => setTimeout(r, waitTimeSec * 1000));
+          return await sendScanWithAutoRetry(uploadBlob, uploadName, retryCount + 1);
+        }
+
+        if (!response.ok && !result.error) {
+          result.error = `Error del servidor HTTP ${response.status}`;
+        }
+
+        return { ...result, is503: is503OrHighDemand, rawErrorText: rawErr };
+      } catch (err) {
+        if (retryCount < maxRetries) {
+          const attempt = retryCount + 1;
+          statusText.textContent = `⏳ Conexión inestable con Render. Reintentando en 3s (Intento ${attempt + 1} de 3)...`;
+          await new Promise(r => setTimeout(r, 3000));
+          return await sendScanWithAutoRetry(uploadBlob, uploadName, retryCount + 1);
+        }
+        return { success: false, error: err.message, is503: false, rawErrorText: err.message };
+      }
+    }
+
+    // Ejecuta el escaneo de la imagen/PDF
+    async function executeInBodyScan(uploadBlob, uploadName) {
+      const loader = document.getElementById('ai-loader');
+      const statusText = document.getElementById('ai-status');
+      const retryBtn = document.getElementById('btn-retry-inbody-scan');
+      loader.style.display = 'flex';
+      statusText.textContent = "Conectando con Gemini AI en Render... (Analizando parámetros InBody / SECA)";
+
+      try {
+        const result = await sendScanWithAutoRetry(uploadBlob, uploadName, 0);
+        loader.style.display = 'none';
+
+        if (result.success && result.data) {
+          if (retryBtn) retryBtn.style.display = 'none';
+          document.getElementById('inbody-form-card').style.display = 'block';
+          fillInBodyForm(result.data);
+          alert("✨ Hoja de evaluación (InBody / SECA mBCA) procesada exitosamente con Gemini AI. Verifica los valores y haz clic en Guardar Evaluación.");
+        } else {
+          if (retryBtn) retryBtn.style.display = 'inline-block';
+
+          if (result.is503) {
+            const wantsRetry = confirm(
+              "⏳ ALTA DEMANDA EN GOOGLE GEMINI (Error 503):\n\n" +
+              "El modelo de IA de Google está experimentando un pico momentáneo de saturación mundial. Estos picos se normalizan en cuestión de segundos.\n\n" +
+              "Tu imagen sigue cargada en memoria. ¿Deseas reintentar el escaneo ahora mismo?"
+            );
+            if (wantsRetry) {
+              executeInBodyScan(uploadBlob, uploadName);
+            }
+          } else {
+            let cleanMsg = result.error;
+            try {
+              if (typeof cleanMsg === 'string' && (cleanMsg.startsWith('{') || cleanMsg.startsWith('['))) {
+                const parsed = JSON.parse(cleanMsg);
+                cleanMsg = parsed.error?.message || parsed.message || cleanMsg;
+              }
+            } catch (e) {}
+            alert("No se pudo procesar el reporte: " + (cleanMsg || "Formato no válido"));
+          }
+        }
+      } catch (err) {
+        loader.style.display = 'none';
+        if (retryBtn) retryBtn.style.display = 'inline-block';
+        alert("Error al procesar el documento con Render: " + err.message);
+      }
+    }
+
     // Escáner Multimodal con Gemini AI Vision (Compatible con InBody y SECA mBCA - Foto o PDF)
     window.processInBodyGemini = async function(event) {
       const file = event.target.files[0];
@@ -1415,30 +1529,14 @@
           uploadName = file.name || 'inbody.jpg';
         }
 
-        statusText.textContent = "Conectando con Gemini AI en Render... (Analizando parámetros InBody / SECA)";
+        // Guardar en caché para reintentos inmediatos sin volver a seleccionar archivo
+        window.lastInBodyUpload = { blob: uploadBlob, name: uploadName };
 
-        const formData = new FormData();
-        formData.append('image', uploadBlob, uploadName);
-
-        const response = await fetch('https://gymrats-backend-d6h0.onrender.com/api/scan-inbody', {
-          method: 'POST',
-          body: formData
-        });
-
-        const result = await response.json();
-        loader.style.display = 'none';
-
-        if (result.success && result.data) {
-          // Abre el formulario y rellena las casillas
-          document.getElementById('inbody-form-card').style.display = 'block';
-          fillInBodyForm(result.data);
-          alert("✨ Hoja de evaluación (InBody / SECA mBCA) procesada exitosamente con Gemini AI. Verifica los valores y haz clic en Guardar Evaluación.");
-        } else {
-          alert("No se pudo procesar el reporte: " + (result.error || "Formato no válido"));
-        }
+        // Ejecutar el escaneo
+        await executeInBodyScan(uploadBlob, uploadName);
       } catch (err) {
         loader.style.display = 'none';
-        alert("Error de conexión al procesar el documento con Gemini en Render: " + err.message);
+        alert("Error al preparar la imagen o documento PDF: " + err.message);
       } finally {
         event.target.value = '';
       }
