@@ -787,7 +787,77 @@
         </div>
       </div>
 
-    </section>
+      <!-- 🤖 EVALUACIÓN CLÍNICA Y ANÁLISIS DE AVANCES / RETROCESOS CON IA (GEMINI) -->
+      <div class="card" id="inbody-ai-evaluation-card" style="border: 1px solid #0284c7; background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); margin-top: 1.5rem; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);">
+        <div class="card-title" style="flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <span style="font-size:1.3rem;">🧠</span>
+            <div>
+              <span id="ai-eval-card-title" style="color: #38bdf8; font-weight: bold; font-size: 1.05rem;">Evaluación de Avances y Retrocesos con IA</span>
+              <div style="font-size: 0.75rem; color: #94a3b8; font-weight: normal;">Diagnóstico de evolución muscular, grasa corporal y recomendaciones clínicas</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-purple" id="btn-generate-ai-eval" style="width: auto; padding: 0.45rem 1rem; font-size: 0.85rem; font-weight: bold;" onclick="generateInBodyAiEvaluation()">
+              ⚡ <span id="btn-generate-ai-eval-text">Generar Evaluación IA</span>
+            </button>
+            <button class="btn btn-secondary" id="btn-toggle-eval-history" style="width: auto; padding: 0.45rem 0.8rem; font-size: 0.82rem; display: none;" onclick="toggleAiEvalHistoryModal()">
+              📜 Historial (<span id="eval-history-count">0</span>)
+            </button>
+          </div>
+        </div>
+
+        <!-- Barra de Deltas Rápidos del Atleta -->
+        <div id="ai-eval-deltas-bar" style="display: none; background: #0b1329; border: 1px solid #334155; border-radius: 8px; padding: 0.85rem; margin-bottom: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.4rem;">
+            <span style="font-size: 0.82rem; color: #cbd5e1;" id="ai-eval-period-label">Periodo analizado: -</span>
+            <span style="font-size: 0.78rem; color: #38bdf8; font-weight: bold;" id="ai-eval-evals-count">0 evaluaciones registradas</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(115px, 1fr)); gap: 0.6rem; text-align: center;">
+            <div style="background: #1e293b; padding: 0.55rem; border-radius: 6px; border: 1px solid #334155;">
+              <div style="font-size: 0.72rem; color: #94a3b8;">Δ Peso Total</div>
+              <div id="delta-peso" style="font-weight: bold; font-size: 1.05rem; color: #f8fafc;">-</div>
+            </div>
+            <div style="background: #1e293b; padding: 0.55rem; border-radius: 6px; border: 1px solid #334155;">
+              <div style="font-size: 0.72rem; color: #94a3b8;">Δ Masa Muscular (MME)</div>
+              <div id="delta-mme" style="font-weight: bold; font-size: 1.05rem; color: #4ade80;">-</div>
+            </div>
+            <div style="background: #1e293b; padding: 0.55rem; border-radius: 6px; border: 1px solid #334155;">
+              <div style="font-size: 0.72rem; color: #94a3b8;">Δ Masa Grasa (kg)</div>
+              <div id="delta-grasa" style="font-weight: bold; font-size: 1.05rem; color: #fb923c;">-</div>
+            </div>
+            <div style="background: #1e293b; padding: 0.55rem; border-radius: 6px; border: 1px solid #334155;">
+              <div style="font-size: 0.72rem; color: #94a3b8;">Δ % Grasa (PGC)</div>
+              <div id="delta-pgc" style="font-weight: bold; font-size: 1.05rem; color: #f43f5e;">-</div>
+            </div>
+            <div style="background: #1e293b; padding: 0.55rem; border-radius: 6px; border: 1px solid #334155;">
+              <div style="font-size: 0.72rem; color: #94a3b8;">Δ Puntuación</div>
+              <div id="delta-score" style="font-weight: bold; font-size: 1.05rem; color: #a855f7;">-</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loader durante generación -->
+        <div id="ai-eval-loading" style="display: none; padding: 2.2rem 1rem; text-align: center; background: rgba(15, 23, 42, 0.6); border-radius: 8px; border: 1px dashed #0284c7; margin-bottom: 1rem;">
+          <div class="spinner" style="margin: 0 auto 1rem auto; width: 44px; height: 44px; border: 4px solid #334155; border-top-color: #38bdf8; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+          <div style="color: #38bdf8; font-weight: bold; font-size: 1.05rem; margin-bottom: 0.4rem;" id="ai-eval-loading-status">Generando Diagnóstico Clínico con Gemini AI...</div>
+          <div style="color: #94a3b8; font-size: 0.85rem; max-width: 480px; margin: 0 auto;">Comparando mediciones cuantitativas, hipertrofia muscular, cambios en adiposidad, grasa visceral y simetría segmental...</div>
+        </div>
+
+        <!-- Contenedor Dinámico del Análisis Registrado -->
+        <div id="ai-eval-content-view">
+          <div style="color: var(--text-muted); text-align: center; padding: 1.5rem;">Cargando estado de evaluaciones con IA...</div>
+        </div>
+
+        <!-- Historial Modal/Acordeón de Evaluaciones Pasadas -->
+        <div id="ai-eval-history-drawer" style="display: none; margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid #334155;">
+          <div style="font-weight: bold; color: #38bdf8; margin-bottom: 0.8rem; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center;">
+            <span>📜 Evaluaciones de IA Registradas Previamente</span>
+            <button class="btn btn-secondary" style="width: auto; padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="toggleAiEvalHistoryModal()">✕ Ocultar Historial</button>
+          </div>
+          <div id="ai-eval-history-list" style="display: flex; flex-direction: column; gap: 0.6rem;"></div>
+        </div>
+      </div>
 
     <!-- 5. SUSPENSIÓN -->
     <section id="view-suspension" class="view-section">
@@ -1062,6 +1132,14 @@
     let records = [];
     let workouts = [];
     let inbodyLogs = [];
+    let inbodyAiEvaluations = [];
+    let selectedPastAiEvalId = null;
+
+    try {
+      const cachedAiEvals = localStorage.getItem('gymrats_inbody_ai_evaluations');
+      if (cachedAiEvals) inbodyAiEvaluations = JSON.parse(cachedAiEvals);
+    } catch (e) {}
+
     let customExercises = [];
     let weightLogs = [];
     let currentWorkoutCategory = 'leg';
@@ -1238,6 +1316,30 @@
       updateSelects();
       renderInBodySection();
     }, (err) => handleFirestoreError(err, "inbody"));
+
+    onSnapshot(collection(db, "inbody_ai_evaluations"), (snapshot) => {
+      inbodyAiEvaluations = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      try {
+        localStorage.setItem('gymrats_inbody_ai_evaluations', JSON.stringify(inbodyAiEvaluations));
+      } catch (e) {}
+
+      const userLogs = inbodyLogs
+        .filter(l => {
+          if (currentSelectedInBodyAthlete === 'ALL') return true;
+          return (l.user || '').trim().toLowerCase() === (currentSelectedInBodyAthlete || '').trim().toLowerCase();
+        })
+        .sort((a,b) => new Date(a.date) - new Date(b.date));
+      renderInBodyAiEvaluationSection(userLogs, currentSelectedInBodyAthlete === 'ALL');
+    }, (err) => {
+      console.warn("[Firebase] inbody_ai_evaluations listener (modo fallback local activo):", err);
+      try {
+        const cached = localStorage.getItem('gymrats_inbody_ai_evaluations');
+        if (cached) inbodyAiEvaluations = JSON.parse(cached);
+      } catch (e) {}
+    });
 
     onSnapshot(collection(db, "exercises"), (snapshot) => {
       customExercises = snapshot.docs.map(doc => doc.data()).sort((a,b) => a.name.localeCompare(b.name));
@@ -1767,6 +1869,7 @@
       const sel = document.getElementById('inbody-user-select');
       currentSelectedInBodyAthlete = sel.value;
       localStorage.setItem('gymrats_last_inbody_athlete', currentSelectedInBodyAthlete);
+      selectedPastAiEvalId = null;
       closeInBodyDetail();
       renderInBodySection();
     };
@@ -1912,6 +2015,9 @@
 
       // 5. Renderizar Tabla Inferior con Lista de Registros Almacenados
       renderInBodyHistoryTable(userLogs, isAll);
+
+      // 6. Renderizar Evaluación Clínica de Avances y Retrocesos con IA
+      renderInBodyAiEvaluationSection(userLogs, isAll);
     }
 
     function renderInBodyHistoryTable(userLogs, isAll = false) {
@@ -1966,6 +2072,511 @@
         tbody.appendChild(tr);
       });
     }
+
+    // ==============================================================
+    // 🧠 EVALUACIÓN CLÍNICA DE AVANCES Y RETROCESOS CON IA (GEMINI)
+    // ==============================================================
+
+    window.toggleAiEvalHistoryModal = function() {
+      const drawer = document.getElementById('ai-eval-history-drawer');
+      if (!drawer) return;
+      drawer.style.display = drawer.style.display === 'none' ? 'block' : 'none';
+    };
+
+    window.viewPastAiEvaluation = function(evalId) {
+      selectedPastAiEvalId = evalId;
+      const userLogs = inbodyLogs
+        .filter(l => (l.user || '').trim().toLowerCase() === (currentSelectedInBodyAthlete || '').trim().toLowerCase())
+        .sort((a,b) => new Date(a.date) - new Date(b.date));
+      renderInBodyAiEvaluationSection(userLogs, false);
+      const container = document.getElementById('inbody-ai-evaluation-card');
+      if (container) container.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    window.deleteAiEvaluation = async function(evalId) {
+      if (!confirm("¿Deseas eliminar este registro de evaluación de IA del expediente?")) return;
+      try {
+        await deleteDoc(doc(db, "inbody_ai_evaluations", evalId));
+        inbodyAiEvaluations = inbodyAiEvaluations.filter(e => e.id !== evalId);
+        try {
+          localStorage.setItem('gymrats_inbody_ai_evaluations', JSON.stringify(inbodyAiEvaluations));
+        } catch (e) {}
+        if (selectedPastAiEvalId === evalId) selectedPastAiEvalId = null;
+        showToast("Registro de evaluación eliminado del expediente.", "info");
+        const userLogs = inbodyLogs
+          .filter(l => (l.user || '').trim().toLowerCase() === (currentSelectedInBodyAthlete || '').trim().toLowerCase())
+          .sort((a,b) => new Date(a.date) - new Date(b.date));
+        renderInBodyAiEvaluationSection(userLogs, false);
+      } catch (err) {
+        showToast("Error al eliminar: " + err.message, "error");
+      }
+    };
+
+    window.renderInBodyAiEvaluationSection = function(userLogs, isAll = false) {
+      const deltasBar = document.getElementById('ai-eval-deltas-bar');
+      const contentView = document.getElementById('ai-eval-content-view');
+      const btnGenerate = document.getElementById('btn-generate-ai-eval');
+      const btnText = document.getElementById('btn-generate-ai-eval-text');
+      const btnHistory = document.getElementById('btn-toggle-eval-history');
+      const historyCountEl = document.getElementById('eval-history-count');
+      const historyDrawer = document.getElementById('ai-eval-history-drawer');
+      const historyListEl = document.getElementById('ai-eval-history-list');
+      const cardTitle = document.getElementById('ai-eval-card-title');
+
+      if (!contentView) return;
+
+      if (isAll || !currentSelectedInBodyAthlete) {
+        if (cardTitle) cardTitle.textContent = "Evaluación de Avances y Retrocesos con IA";
+        if (deltasBar) deltasBar.style.display = 'none';
+        if (btnHistory) btnHistory.style.display = 'none';
+        if (historyDrawer) historyDrawer.style.display = 'none';
+        if (btnGenerate) btnGenerate.disabled = true;
+        if (btnText) btnText.textContent = "Generar Evaluación IA";
+        contentView.innerHTML = `
+          <div style="text-align: center; padding: 2rem 1rem; color: #94a3b8;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">👥</div>
+            <div style="font-weight: bold; color: #f8fafc; margin-bottom: 0.3rem;">Selecciona un Atleta Específico</div>
+            <div style="font-size: 0.88rem; max-width: 480px; margin: 0 auto; line-height: 1.4;">
+              Para consultar o generar la evaluación clínica con IA de avances y retrocesos, selecciona a un atleta en el selector superior.
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (btnGenerate) btnGenerate.disabled = false;
+      if (cardTitle) cardTitle.textContent = `Evaluación de Avances y Retrocesos con IA - ${currentSelectedInBodyAthlete}`;
+
+      // Logs del atleta ordenados cronológicamente
+      const athleteLogs = (userLogs || [])
+        .filter(l => (l.user || '').trim().toLowerCase() === currentSelectedInBodyAthlete.trim().toLowerCase())
+        .sort((a,b) => new Date(a.date) - new Date(b.date));
+
+      if (athleteLogs.length === 0) {
+        if (deltasBar) deltasBar.style.display = 'none';
+        if (btnHistory) btnHistory.style.display = 'none';
+        if (historyDrawer) historyDrawer.style.display = 'none';
+        if (btnText) btnText.textContent = "Generar Evaluación IA";
+        contentView.innerHTML = `
+          <div style="text-align: center; padding: 2rem 1rem; color: #94a3b8;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
+            <div style="font-weight: bold; color: #f8fafc; margin-bottom: 0.3rem;">Sin Evaluaciones Registradas</div>
+            <div style="font-size: 0.88rem; max-width: 480px; margin: 0 auto; line-height: 1.4;">
+              El atleta <strong>${currentSelectedInBodyAthlete}</strong> aún no cuenta con evaluaciones InBody o SECA. Escanea una hoja de reporte o llena el formulario para habilitar el análisis de progreso.
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // 1. Mostrar y calcular Deltas Numéricos
+      if (deltasBar) {
+        deltasBar.style.display = 'block';
+        const first = athleteLogs[0];
+        const latest = athleteLogs[athleteLogs.length - 1];
+
+        const periodLabel = document.getElementById('ai-eval-period-label');
+        const evalsCount = document.getElementById('ai-eval-evals-count');
+
+        const pFirst = (first.date || '').split('-');
+        const pLatest = (latest.date || '').split('-');
+        const fmtFirst = pFirst.length === 3 ? `${pFirst[2]}/${pFirst[1]}/${pFirst[0]}` : first.date;
+        const fmtLatest = pLatest.length === 3 ? `${pLatest[2]}/${pLatest[1]}/${pLatest[0]}` : latest.date;
+
+        if (periodLabel) {
+          periodLabel.textContent = athleteLogs.length === 1 
+            ? `Línea Base: Evaluación Inicial del ${fmtLatest}` 
+            : `Evolución Cronológica: Del ${fmtFirst} al ${fmtLatest}`;
+        }
+        if (evalsCount) {
+          evalsCount.textContent = `${athleteLogs.length} evaluación${athleteLogs.length > 1 ? 'es' : ''} en el histórico`;
+        }
+
+        const deltaPesoVal = (latest.peso || 0) - (first.peso || 0);
+        const deltaMmeVal = (latest.mme || 0) - (first.mme || 0);
+        const deltaGrasaVal = (latest.grasaKg || 0) - (first.grasaKg || 0);
+        const deltaPgcVal = (latest.pgc || 0) - (first.pgc || 0);
+        const deltaScoreVal = (latest.score || 0) - (first.score || 0);
+
+        const formatDelta = (val, unit, isGoodWhenPositive) => {
+          if (athleteLogs.length === 1) return `Base (${(parseFloat(val) || 0).toFixed(1)} ${unit})`;
+          if (Math.abs(val) < 0.05) return `0.0 ${unit} (Estable)`;
+          const sign = val > 0 ? '+' : '';
+          const isPositive = val > 0;
+          const isGood = isGoodWhenPositive ? isPositive : !isPositive;
+          const color = isGood ? '#4ade80' : '#f87171';
+          const icon = isPositive ? '📈' : '📉';
+          return `<span style="color: ${color};">${sign}${val.toFixed(1)} ${unit} ${icon}</span>`;
+        };
+
+        const dPeso = document.getElementById('delta-peso');
+        const dMme = document.getElementById('delta-mme');
+        const dGrasa = document.getElementById('delta-grasa');
+        const dPgc = document.getElementById('delta-pgc');
+        const dScore = document.getElementById('delta-score');
+
+        if (dPeso) dPeso.innerHTML = athleteLogs.length === 1 ? `${latest.peso || 0} kg` : formatDelta(deltaPesoVal, 'kg', false);
+        if (dMme) dMme.innerHTML = athleteLogs.length === 1 ? `${latest.mme || 0} kg` : formatDelta(deltaMmeVal, 'kg', true);
+        if (dGrasa) dGrasa.innerHTML = athleteLogs.length === 1 ? `${latest.grasaKg || 0} kg` : formatDelta(deltaGrasaVal, 'kg', false);
+        if (dPgc) dPgc.innerHTML = athleteLogs.length === 1 ? `${latest.pgc || 0}%` : formatDelta(deltaPgcVal, '%', false);
+        if (dScore) {
+          if (athleteLogs.length === 1) {
+            dScore.textContent = `${latest.score || 0} pts`;
+          } else {
+            const sign = deltaScoreVal > 0 ? '+' : '';
+            const color = deltaScoreVal >= 0 ? '#a855f7' : '#f87171';
+            dScore.innerHTML = `<span style="color: ${color};">${sign}${deltaScoreVal} pts</span>`;
+          }
+        }
+      }
+
+      // 2. Buscar evaluaciones de IA registradas para este atleta
+      const athleteEvals = inbodyAiEvaluations
+        .filter(e => (e.athlete || '').trim().toLowerCase() === currentSelectedInBodyAthlete.trim().toLowerCase())
+        .sort((a,b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+
+      if (btnHistory && historyCountEl) {
+        historyCountEl.textContent = athleteEvals.length;
+        btnHistory.style.display = athleteEvals.length > 0 ? 'inline-flex' : 'none';
+      }
+
+      // Llenar lista del drawer de historial
+      if (historyListEl) {
+        historyListEl.innerHTML = '';
+        if (athleteEvals.length === 0) {
+          historyListEl.innerHTML = '<div style="color:#94a3b8; font-size:0.85rem; padding: 0.5rem 0;">No hay otras evaluaciones registradas en el historial.</div>';
+        } else {
+          athleteEvals.forEach((ev, idx) => {
+            const evDate = new Date(ev.createdAt || ev.date).toLocaleString();
+            const isSelected = selectedPastAiEvalId === ev.id || (!selectedPastAiEvalId && idx === 0);
+            const row = document.createElement('div');
+            row.style.cssText = `background: ${isSelected ? '#0f172a' : '#1e293b'}; border: 1px solid ${isSelected ? '#38bdf8' : '#334155'}; border-radius: 6px; padding: 0.65rem 0.85rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap;`;
+            row.innerHTML = `
+              <div style="flex: 1; min-width: 200px;">
+                <div style="font-weight: bold; color: ${isSelected ? '#38bdf8' : '#f8fafc'}; font-size: 0.88rem;">
+                  ${ev.statusBadge || 'Evaluación IA'} - ⭐ ${ev.progressRating || 8}/10
+                </div>
+                <div style="font-size: 0.75rem; color: #94a3b8;">
+                  Registrado: <strong>${evDate}</strong> | Rango: ${ev.periodCovered || 'Histórico'}
+                </div>
+                <div style="font-size: 0.8rem; color: #cbd5e1; margin-top: 0.2rem; font-style: italic;">
+                  "${(ev.overallVerdict || '').substring(0, 85)}${(ev.overallVerdict || '').length > 85 ? '...' : ''}"
+                </div>
+              </div>
+              <div style="display: flex; gap: 0.4rem; align-items: center;">
+                <button class="btn btn-secondary" style="width: auto; padding: 0.25rem 0.65rem; font-size: 0.78rem;" onclick="viewPastAiEvaluation('${ev.id}')">
+                  ${isSelected ? '👁️ Activa' : '📂 Cargar'}
+                </button>
+                <button class="btn-icon" title="Eliminar registro" onclick="deleteAiEvaluation('${ev.id}')">🗑️</button>
+              </div>
+            `;
+            historyListEl.appendChild(row);
+          });
+        }
+      }
+
+      // Determinar la evaluación activa a renderizar
+      const activeEval = (selectedPastAiEvalId ? athleteEvals.find(e => e.id === selectedPastAiEvalId) : null) 
+        || (athleteEvals.length > 0 ? athleteEvals[0] : null);
+
+      if (activeEval) {
+        if (btnText) btnText.textContent = "🔄 Actualizar Evaluación IA";
+
+        const badgeColorMap = {
+          green: { bg: 'rgba(16, 185, 129, 0.15)', text: '#34d399', border: '#059669' },
+          blue: { bg: 'rgba(14, 165, 233, 0.15)', text: '#38bdf8', border: '#0284c7' },
+          rose: { bg: 'rgba(244, 63, 94, 0.15)', text: '#fb7185', border: '#e11d48' },
+          amber: { bg: 'rgba(245, 158, 11, 0.15)', text: '#fbbf24', border: '#d97706' }
+        };
+        const theme = badgeColorMap[activeEval.statusColor] || badgeColorMap.blue;
+        const regDate = new Date(activeEval.createdAt || activeEval.date).toLocaleString();
+
+        const renderListItems = (items) => {
+          if (!items || !Array.isArray(items) || items.length === 0) {
+            return `<div style="font-size: 0.85rem; color: #94a3b8; font-style: italic;">Sin observaciones registradas.</div>`;
+          }
+          return `<ul style="margin: 0; padding-left: 1.2rem; font-size: 0.86rem; line-height: 1.5; color: #e2e8f0;">
+            ${items.map(it => `<li style="margin-bottom: 0.4rem;">${it}</li>`).join('')}
+          </ul>`;
+        };
+
+        contentView.innerHTML = `
+          <!-- Encabezado de la Evaluación Registrada -->
+          <div style="background: ${theme.bg}; border: 1px solid ${theme.border}; border-radius: 10px; padding: 1rem; margin-bottom: 1.2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 0.6rem;">
+              <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <span class="badge" style="background: ${theme.border}; color: #ffffff; font-weight: bold; font-size: 0.85rem; padding: 0.3rem 0.75rem; border-radius: 9999px;">
+                  ${activeEval.statusBadge || 'Progreso Clínico'}
+                </span>
+                <span style="font-weight: bold; color: #f8fafc; font-size: 0.95rem;">
+                  ⭐ Calificación: <strong style="color: #fbbf24;">${activeEval.progressRating || 8}</strong> / 10
+                </span>
+              </div>
+              <div style="font-size: 0.78rem; color: #cbd5e1;">
+                📅 Registrado: <strong>${regDate}</strong> | Rango: <strong>${activeEval.periodCovered || 'Histórico'}</strong>
+              </div>
+            </div>
+
+            <!-- Veredicto General -->
+            <div style="background: rgba(15, 23, 42, 0.75); border-left: 4px solid ${theme.border}; border-radius: 6px; padding: 0.8rem 1rem; margin: 0.6rem 0;">
+              <div style="font-size: 0.75rem; text-transform: uppercase; color: ${theme.text}; font-weight: bold; letter-spacing: 0.5px; margin-bottom: 0.2rem;">
+                Veredicto Clínico Deportivo
+              </div>
+              <div style="font-size: 0.98rem; font-weight: 600; color: #f8fafc; line-height: 1.4;">
+                "${activeEval.overallVerdict || 'Evolución analizada con éxito.'}"
+              </div>
+            </div>
+
+            <!-- Resumen Narrativo -->
+            <div style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.5; margin-top: 0.6rem;">
+              ${activeEval.summary || ''}
+            </div>
+          </div>
+
+          <!-- Cuadrícula: Avances vs Retrocesos -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.2rem;">
+            
+            <!-- Columna Avances -->
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 10px; padding: 1rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: bold; color: #34d399; font-size: 0.95rem; margin-bottom: 0.8rem;">
+                <span>📈</span> <span>Avances y Logros Detectados</span>
+              </div>
+              ${renderListItems(activeEval.avances)}
+            </div>
+
+            <!-- Columna Retrocesos / Puntos de Atención -->
+            <div style="background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.35); border-radius: 10px; padding: 1rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: bold; color: #fb7185; font-size: 0.95rem; margin-bottom: 0.8rem;">
+                <span>⚠️</span> <span>Retrocesos o Puntos de Atención</span>
+              </div>
+              ${renderListItems(activeEval.retrocesos)}
+            </div>
+          </div>
+
+          <!-- Análisis Segmental y Simetría -->
+          ${activeEval.segmentalAnalysis ? `
+            <div style="background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 1rem; margin-bottom: 1.2rem;">
+              <div style="font-weight: bold; color: #38bdf8; font-size: 0.92rem; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span>⚖️</span> <span>Análisis Segmental y Simetría Muscular</span>
+              </div>
+              <div style="font-size: 0.86rem; color: #cbd5e1; line-height: 1.5;">
+                ${activeEval.segmentalAnalysis}
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Plan Estratégico y Recomendaciones -->
+          <div style="background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 1rem; margin-bottom: 1.2rem;">
+            <div style="font-weight: bold; color: #a855f7; font-size: 0.95rem; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem;">
+              <span>🎯</span> <span>Plan Estratégico Personalizado (Prescripción Deportiva)</span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.8rem;">
+              
+              <div style="background: #1e293b; border-radius: 8px; padding: 0.8rem; border: 1px solid #334155;">
+                <div style="font-weight: bold; color: #38bdf8; font-size: 0.85rem; margin-bottom: 0.3rem;">
+                  🥗 Nutrición e Hidratación
+                </div>
+                <div style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.45;">
+                  ${activeEval.nutritionalAdvice || 'Ajustar macronutrientes acorde a objetivos.'}
+                </div>
+              </div>
+
+              <div style="background: #1e293b; border-radius: 8px; padding: 0.8rem; border: 1px solid #334155;">
+                <div style="font-weight: bold; color: #4ade80; font-size: 0.85rem; margin-bottom: 0.3rem;">
+                  🏋️‍♂️ Entrenamiento y Sobrecarga
+                </div>
+                <div style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.45;">
+                  ${activeEval.trainingAdvice || 'Mantener progresión en cargas y series efectivas.'}
+                </div>
+              </div>
+
+              <div style="background: #1e293b; border-radius: 8px; padding: 0.8rem; border: 1px solid #334155;">
+                <div style="font-weight: bold; color: #fb923c; font-size: 0.85rem; margin-bottom: 0.3rem;">
+                  🎯 Objetivo Próximo InBody
+                </div>
+                <div style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.45;">
+                  ${activeEval.nextGoal || 'Consolidar composición corporal y progreso muscular.'}
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Acciones de Gestión de la Evaluación -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #334155;">
+            <div style="font-size: 0.78rem; color: #94a3b8;">
+              ✅ <em>Esta evaluación se encuentra registrada en el historial de Firebase y memoria local.</em>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn btn-secondary" style="width: auto; padding: 0.35rem 0.8rem; font-size: 0.8rem;" onclick="generateInBodyAiEvaluation()">
+                🔄 Actualizar Análisis con IA
+              </button>
+              <button class="btn btn-secondary" style="width: auto; padding: 0.35rem 0.8rem; font-size: 0.8rem; color: #f87171;" onclick="deleteAiEvaluation('${activeEval.id}')">
+                🗑️ Eliminar Registro
+              </button>
+            </div>
+          </div>
+        `;
+      } else {
+        // No hay evaluación previa para este atleta
+        if (btnText) btnText.textContent = "⚡ Generar Evaluación IA";
+        contentView.innerHTML = `
+          <div style="text-align: center; padding: 2.5rem 1rem; background: rgba(15, 23, 42, 0.4); border-radius: 10px; border: 1px dashed #38bdf8;">
+            <div style="font-size: 2.2rem; margin-bottom: 0.6rem;">🤖</div>
+            <div style="font-weight: bold; color: #38bdf8; font-size: 1.1rem; margin-bottom: 0.4rem;">
+              Generar Evaluación Clínica de Avances y Retrocesos
+            </div>
+            <div style="font-size: 0.9rem; color: #cbd5e1; max-width: 520px; margin: 0 auto 1.2rem auto; line-height: 1.5;">
+              El atleta <strong>${currentSelectedInBodyAthlete}</strong> cuenta con <strong>${athleteLogs.length} evaluación${athleteLogs.length > 1 ? 'es' : ''}</strong> en su histórico.
+              Presiona el botón para que Gemini AI analice sus deltas de masa muscular (MME), tejido graso (PGC), grasa visceral y simetría, generando un diagnóstico clínico que <strong>quedará registrado permanentemente</strong> en su expediente.
+            </div>
+            <button class="btn btn-purple" style="width: auto; padding: 0.6rem 1.4rem; font-size: 0.95rem; font-weight: bold;" onclick="generateInBodyAiEvaluation()">
+              ⚡ Generar y Registrar Evaluación con IA
+            </button>
+          </div>
+        `;
+      }
+    };
+
+    window.generateInBodyAiEvaluation = async function() {
+      if (!currentSelectedInBodyAthlete || currentSelectedInBodyAthlete === 'ALL') {
+        showToast("Por favor selecciona un atleta específico para generar la evaluación de IA.", "warning");
+        return;
+      }
+
+      const athleteLogs = inbodyLogs
+        .filter(l => (l.user || '').trim().toLowerCase() === currentSelectedInBodyAthlete.trim().toLowerCase())
+        .sort((a,b) => new Date(a.date) - new Date(b.date));
+
+      if (athleteLogs.length === 0) {
+        showToast("No hay registros de evaluaciones InBody para este atleta.", "warning");
+        return;
+      }
+
+      const btn = document.getElementById('btn-generate-ai-eval');
+      const btnText = document.getElementById('btn-generate-ai-eval-text');
+      const loader = document.getElementById('ai-eval-loading');
+      const contentView = document.getElementById('ai-eval-content-view');
+      const statusEl = document.getElementById('ai-eval-loading-status');
+
+      if (btn) btn.disabled = true;
+      if (btnText) btnText.textContent = "Analizando con IA...";
+      if (loader) loader.style.display = 'block';
+      if (contentView) contentView.style.opacity = '0.3';
+
+      const steps = [
+        "Analizando evolución cronológica de composición corporal...",
+        "Detectando avances hipertróficos y variaciones en tejido adiposo...",
+        "Examinando grasa visceral y simetría segmental...",
+        "Formulando prescripción clínica y recomendaciones de sobrecarga..."
+      ];
+      let stepIdx = 0;
+      const stepInterval = setInterval(() => {
+        stepIdx = (stepIdx + 1) % steps.length;
+        if (statusEl) statusEl.textContent = steps[stepIdx];
+      }, 2000);
+
+      try {
+        const payload = {
+          athlete: currentSelectedInBodyAthlete,
+          history: athleteLogs.map(l => ({
+            date: l.date,
+            peso: l.peso,
+            mme: l.mme,
+            grasaKg: l.grasaKg,
+            pgc: l.pgc,
+            score: l.score,
+            imc: l.imc,
+            agua: l.agua ?? l.act,
+            proteinas: l.proteinas,
+            minerales: l.minerales,
+            visceral: l.visceral,
+            tmb: l.tmb,
+            segmentalMagra: l.segmentalMagra,
+            segmentalGrasa: l.segmentalGrasa
+          }))
+        };
+
+        const endpoints = [
+          '/api/evaluate-inbody',
+          'https://gymrats-backend-d6h0.onrender.com/api/evaluate-inbody'
+        ];
+
+        let result = null;
+        let lastError = null;
+
+        for (const url of endpoints) {
+          try {
+            console.log(`[GymRats AI Eval] Enviando petición a ${url}...`);
+            const resp = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+
+            if (resp.ok) {
+              result = await resp.json();
+              if (result && result.success && result.evaluation) {
+                break;
+              }
+            } else {
+              const errData = await resp.json().catch(() => ({}));
+              lastError = new Error(errData.error || `Error ${resp.status}`);
+            }
+          } catch (netErr) {
+            lastError = netErr;
+          }
+        }
+
+        if (!result || !result.evaluation) {
+          throw lastError || new Error("No se pudo obtener la respuesta de la IA.");
+        }
+
+        const evaluationData = result.evaluation;
+        const nowIso = new Date().toISOString();
+        const docId = `${currentSelectedInBodyAthlete.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}`;
+
+        const recordToSave = {
+          id: docId,
+          athlete: currentSelectedInBodyAthlete,
+          createdAt: nowIso,
+          date: today,
+          firstEvaluationDate: athleteLogs[0].date,
+          latestEvaluationDate: athleteLogs[athleteLogs.length - 1].date,
+          totalEvaluationsCompared: athleteLogs.length,
+          ...evaluationData
+        };
+
+        // 1. Guardar en Firestore para que quede registrado permanentemente
+        try {
+          await setDoc(doc(db, "inbody_ai_evaluations", docId), recordToSave);
+          console.log("[Firebase] Evaluación guardada en Firestore exitosamente:", docId);
+        } catch (fsErr) {
+          console.warn("[Firebase] No se pudo escribir en Firestore (usando fallback local):", fsErr);
+        }
+
+        // 2. Guardar en estado local y localStorage
+        inbodyAiEvaluations = [recordToSave, ...inbodyAiEvaluations.filter(e => e.id !== docId)];
+        try {
+          localStorage.setItem('gymrats_inbody_ai_evaluations', JSON.stringify(inbodyAiEvaluations));
+        } catch (e) {}
+
+        selectedPastAiEvalId = docId;
+        showToast("✅ Evaluación registrada exitosamente en el expediente del atleta.", "success");
+        renderInBodyAiEvaluationSection(athleteLogs, false);
+
+      } catch (error) {
+        console.error("Error al generar evaluación IA:", error);
+        showToast("Error al generar evaluación: " + error.message, "error");
+      } finally {
+        clearInterval(stepInterval);
+        if (btn) btn.disabled = false;
+        if (btnText) btnText.textContent = "Generar Evaluación IA";
+        if (loader) loader.style.display = 'none';
+        if (contentView) contentView.style.opacity = '1';
+      }
+    };
 
     // Función auxiliar para actualizar los indicadores semáforo (Bajo, Normal, Alto)
     function updateTrafficGauge(key, val, minVal, normMin, normMax, maxVal, unit, extraText = '') {
