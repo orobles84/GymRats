@@ -273,7 +273,7 @@
 <body>
 
   <!-- Versión del Software Actualizada -->
-  <div class="app-version-badge" id="app-version-tag">v2026.09.7 InBody & Seca AI Vision</div>
+  <div class="app-version-badge" id="app-version-tag">v2026.09.8 InBody & Seca AI Vision</div>
 
   <!-- Loader del Escáner Multimodal -->
   <div id="ai-loader">
@@ -304,6 +304,9 @@
   </nav>
 
   <main class="container">
+
+    <!-- BANNER DE DIAGNÓSTICO Y CONEXIÓN CON FIREBASE -->
+    <div id="firebase-status-banner" style="display:none; margin-bottom: 1.2rem;"></div>
 
     <!-- 1. MENÚ PRINCIPAL -->
     <section id="view-home" class="view-section active">
@@ -749,6 +752,7 @@
           <table>
             <thead>
               <tr>
+                <th id="th-inbody-athlete" style="display:none;">Atleta</th>
                 <th>Fecha</th>
                 <th>Puntuación</th>
                 <th>Peso</th>
@@ -759,7 +763,7 @@
               </tr>
             </thead>
             <tbody id="inbody-records-table-body">
-              <tr><td colspan="7" style="color: var(--text-muted);">Cargando registros históricos...</td></tr>
+              <tr><td colspan="8" style="color: var(--text-muted);">Cargando registros históricos...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1106,48 +1110,122 @@
       }
     };
 
+    // DIAGNÓSTICO Y MANEJO DE ERRORES FIREBASE
+    function handleFirestoreError(err, collectionName) {
+      console.error(`[Firebase Firestore Error] (${collectionName}):`, err);
+      const banner = document.getElementById('firebase-status-banner');
+      if (!banner) return;
+      banner.style.display = 'block';
+
+      if (err.code === 'permission-denied' || String(err.message || '').includes('Missing or insufficient permissions')) {
+        banner.innerHTML = `
+          <div style="background: rgba(239, 68, 68, 0.15); border: 2px solid #ef4444; border-radius: 10px; padding: 1rem; color: #fecaca; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+            <div style="display:flex; align-items:center; gap:0.5rem; font-weight:bold; font-size:1.05rem; color:#f87171; margin-bottom:0.4rem;">
+              <span>🚨</span> <span>Error de Permisos en Firebase (Reglas de Seguridad Expiradas)</span>
+            </div>
+            <p style="font-size:0.9rem; line-height:1.4; margin-bottom:0.6rem;">
+              En la consola de Firebase sí puedes ver los datos, pero tu aplicación web tiene el acceso bloqueado porque las <strong>reglas de seguridad de prueba (Test Mode) de 30 días ya vencieron</strong> (código: <code>permission-denied</code>).
+            </p>
+            <div style="background:#0f172a; border:1px solid #334155; border-radius:6px; padding:0.6rem; font-family:monospace; font-size:0.8rem; color:#38bdf8; margin-bottom:0.6rem;">
+              // Copia y pega esto en Firebase Console > Firestore Database > Reglas (Rules):<br>
+              rules_version = '2';<br>
+              service cloud.firestore {<br>
+              &nbsp;&nbsp;match /databases/{database}/documents {<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;match /{document=**} {<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read, write: if true;<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+              &nbsp;&nbsp;}<br>
+              }
+            </div>
+            <p style="font-size:0.82rem; color:#94a3b8;">
+              👉 Haz clic en el botón <strong>"Publicar" (Publish)</strong> en la pestaña Reglas de tu consola de Firebase y luego recarga esta página.
+            </p>
+          </div>
+        `;
+      } else {
+        banner.innerHTML = `
+          <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; border-radius: 8px; padding: 0.8rem; color: #fef3c7; font-size: 0.88rem;">
+            ⚠️ <strong>Aviso de Firebase (${collectionName}):</strong> ${err.message || err.code || 'Error de conexión'}
+          </div>
+        `;
+      }
+    }
+
+    // Obtener la lista unificada de todos los atletas (desde users + inbody + workouts + records)
+    function getAllAthletes() {
+      const set = new Set(users);
+      inbodyLogs.forEach(l => {
+        const u = l.user || l.atleta || l.nombre || l.athlete;
+        if (u && typeof u === 'string') set.add(u.trim());
+      });
+      weightLogs.forEach(w => { if (w.user && typeof w.user === 'string') set.add(w.user.trim()); });
+      workouts.forEach(w => { if (w.user && typeof w.user === 'string') set.add(w.user.trim()); });
+      records.forEach(r => { if (r.user && typeof r.user === 'string') set.add(r.user.trim()); });
+      return Array.from(set).filter(Boolean).sort((a,b) => a.localeCompare(b));
+    }
+
     // SINCRONIZACIÓN EN TIEMPO REAL CON FIREBASE
     onSnapshot(collection(db, "users"), (snapshot) => {
-      users = snapshot.docs.map(doc => doc.data().name).sort();
+      users = snapshot.docs.map(doc => {
+        const d = doc.data();
+        return (d.name || d.nombre || d.user || d.atleta || doc.id || '').trim();
+      }).filter(Boolean).sort((a,b) => a.localeCompare(b));
+
       renderUsers();
       updateSelects();
       
-      // Auto-selección del primer atleta si no hay seleccionado
-      if (!currentSelectedInBodyAthlete && users.length > 0) {
-        currentSelectedInBodyAthlete = users[0];
+      const allAthletes = getAllAthletes();
+      if (!currentSelectedInBodyAthlete && allAthletes.length > 0) {
+        currentSelectedInBodyAthlete = allAthletes[0];
         localStorage.setItem('gymrats_last_inbody_athlete', currentSelectedInBodyAthlete);
         const sel = document.getElementById('inbody-user-select');
         if (sel) sel.value = currentSelectedInBodyAthlete;
       }
       renderInBodySection();
-    });
+    }, (err) => handleFirestoreError(err, "users"));
 
     onSnapshot(collection(db, "records"), (snapshot) => {
       records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       updateSuspensionUI();
-    });
+    }, (err) => handleFirestoreError(err, "records"));
 
     onSnapshot(collection(db, "weight_records"), (snapshot) => {
       weightLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       updateWeightUI();
-    });
+    }, (err) => handleFirestoreError(err, "weight_records"));
 
     onSnapshot(collection(db, "workouts"), (snapshot) => {
       workouts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       renderWorkoutTable();
       renderAnalytics();
-    });
+    }, (err) => handleFirestoreError(err, "workouts"));
 
     onSnapshot(collection(db, "inbody"), (snapshot) => {
-      inbodyLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      inbodyLogs = snapshot.docs.map(doc => {
+        const d = doc.data();
+        const userName = (d.user || d.atleta || d.nombre || d.athlete || '').trim();
+        return {
+          id: doc.id,
+          ...d,
+          user: userName
+        };
+      });
+
+      // Auto-reparación del atleta seleccionado si no existe o está vacío
+      const allAthletes = getAllAthletes();
+      if (!currentSelectedInBodyAthlete && allAthletes.length > 0) {
+        currentSelectedInBodyAthlete = allAthletes[0];
+        localStorage.setItem('gymrats_last_inbody_athlete', currentSelectedInBodyAthlete);
+      }
+      updateSelects();
       renderInBodySection();
-    });
+    }, (err) => handleFirestoreError(err, "inbody"));
 
     onSnapshot(collection(db, "exercises"), (snapshot) => {
       customExercises = snapshot.docs.map(doc => doc.data()).sort((a,b) => a.name.localeCompare(b.name));
       populateExerciseSelect();
       filterAnalyticsExercises();
-    });
+    }, (err) => handleFirestoreError(err, "exercises"));
 
     function updateSelects() {
       const selects = [
@@ -1159,25 +1237,35 @@
         document.getElementById('select-user-weight')
       ];
 
+      const allAthletes = getAllAthletes();
+
       selects.forEach((sel, idx) => {
         if (!sel) return;
         const currentVal = sel.value;
         if (idx === 2) {
           sel.innerHTML = '<option value="ALL">-- Todos los Atletas --</option>';
+        } else if (idx === 3) {
+          sel.innerHTML = '<option value="ALL">-- 👥 Ver Todos los Atletas (Todos los Registros) --</option>';
         } else {
           sel.innerHTML = '<option value="">-- Selecciona Atleta --</option>';
         }
-        users.forEach(u => {
+
+        allAthletes.forEach(u => {
           const opt = document.createElement('option');
           opt.value = u;
           opt.textContent = u;
           sel.appendChild(opt);
         });
 
-        if (currentVal && users.includes(currentVal)) {
+        if (currentVal && (allAthletes.includes(currentVal) || currentVal === 'ALL')) {
           sel.value = currentVal;
-        } else if (idx === 3 && currentSelectedInBodyAthlete && users.includes(currentSelectedInBodyAthlete)) {
-          sel.value = currentSelectedInBodyAthlete;
+        } else if (idx === 3) {
+          if (currentSelectedInBodyAthlete && (allAthletes.includes(currentSelectedInBodyAthlete) || currentSelectedInBodyAthlete === 'ALL')) {
+            sel.value = currentSelectedInBodyAthlete;
+          } else if (allAthletes.length > 0) {
+            sel.value = allAthletes[0];
+            currentSelectedInBodyAthlete = allAthletes[0];
+          }
         }
       });
     }
@@ -1665,21 +1753,33 @@
         currentSelectedInBodyAthlete = sel.value;
       }
 
-      if (!currentSelectedInBodyAthlete && users.length > 0) {
-        currentSelectedInBodyAthlete = users[0];
+      const allAthletes = getAllAthletes();
+      if (!currentSelectedInBodyAthlete && allAthletes.length > 0) {
+        currentSelectedInBodyAthlete = allAthletes[0];
         if (sel) sel.value = currentSelectedInBodyAthlete;
       }
 
+      const isAll = currentSelectedInBodyAthlete === 'ALL';
+
       const tableTitle = document.getElementById('table-history-title');
       if (tableTitle) {
-        tableTitle.textContent = currentSelectedInBodyAthlete 
-          ? `📑 Historial de Evaluaciones Almacenadas - ${currentSelectedInBodyAthlete}`
-          : `📑 Historial de Evaluaciones Almacenadas`;
+        if (isAll) {
+          tableTitle.textContent = `📑 Historial de Evaluaciones Almacenadas - Todos los Atletas (${inbodyLogs.length} evaluaciones)`;
+        } else {
+          tableTitle.textContent = currentSelectedInBodyAthlete 
+            ? `📑 Historial de Evaluaciones Almacenadas - ${currentSelectedInBodyAthlete}`
+            : `📑 Historial de Evaluaciones Almacenadas`;
+        }
       }
 
-      // Filtrar registros del atleta seleccionado ordenados por fecha ascendente
+      // Filtrar registros del atleta seleccionado o mostrar todos si se eligió ALL
       const userLogs = inbodyLogs
-        .filter(l => l.user === currentSelectedInBodyAthlete)
+        .filter(l => {
+          if (isAll) return true;
+          const logUser = (l.user || '').trim().toLowerCase();
+          const target = (currentSelectedInBodyAthlete || '').trim().toLowerCase();
+          return logUser === target;
+        })
         .sort((a,b) => new Date(a.date) - new Date(b.date));
 
       // 1. Gráfica de Composición Corporal
@@ -1722,16 +1822,33 @@
       inbodySegGrasaChart.update();
 
       // 5. Renderizar Tabla Inferior con Lista de Registros Almacenados
-      renderInBodyHistoryTable(userLogs);
+      renderInBodyHistoryTable(userLogs, isAll);
     }
 
-    function renderInBodyHistoryTable(userLogs) {
+    function renderInBodyHistoryTable(userLogs, isAll = false) {
       const tbody = document.getElementById('inbody-records-table-body');
+      const thAthlete = document.getElementById('th-inbody-athlete');
       if (!tbody) return;
       tbody.innerHTML = '';
 
+      if (thAthlete) {
+        thAthlete.style.display = isAll ? '' : 'none';
+      }
+
       if (userLogs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="color: var(--text-muted); padding: 1.5rem;">No hay evaluaciones registradas para este atleta. Haz clic en "📸 Escanear con IA" o "➕ Registrar" para agregar una.</td></tr>';
+        const totalOverall = inbodyLogs.length;
+        if (totalOverall > 0) {
+          tbody.innerHTML = `<tr><td colspan="${isAll ? 8 : 7}" style="color: #fde68a; padding: 1.5rem; background: rgba(245, 158, 11, 0.1);">
+            ⚠️ No hay evaluaciones para el atleta seleccionado ("${currentSelectedInBodyAthlete}").<br>
+            <span style="color: var(--accent-blue);">Hay un total de <strong>${totalOverall}</strong> evaluaciones en la base de datos de Firebase.</span><br>
+            Selecciona <strong>"-- 👥 Ver Todos los Atletas --"</strong> en el selector de arriba para consultarlas todas.
+          </td></tr>`;
+        } else {
+          tbody.innerHTML = `<tr><td colspan="${isAll ? 8 : 7}" style="color: var(--text-muted); padding: 1.5rem;">
+            No se han recibido evaluaciones de Firebase (0 registros en memoria).<br>
+            <span style="font-size: 0.85rem; color: #94a3b8;">Si ves datos en tu consola de Firebase pero aquí aparecen 0, por favor revisa las <strong>Reglas de Seguridad (Rules)</strong> en Firestore en la consola de Firebase.</span>
+          </td></tr>`;
+        }
         return;
       }
 
@@ -1739,10 +1856,11 @@
       const reversed = [...userLogs].reverse();
       reversed.forEach(log => {
         const tr = document.createElement('tr');
-        const p = log.date.split('-');
-        const dateFormatted = `${p[2]}/${p[1]}/${p[0]}`;
+        const p = (log.date || '').split('-');
+        const dateFormatted = p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : (log.date || '-');
 
         tr.innerHTML = `
+          ${isAll ? `<td style="color: var(--accent-blue); font-weight: bold;">${log.user || 'Sin Asignar'}</td>` : ''}
           <td><strong>${dateFormatted}</strong></td>
           <td style="color: var(--accent-green); font-weight: bold;">${log.score || 0} pts</td>
           <td>${log.peso || 0} kg</td>
