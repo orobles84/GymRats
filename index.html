@@ -295,6 +295,7 @@
     <div class="drawer-header">GymRats Menu</div>
     <ul class="drawer-menu">
       <li><a href="#" onclick="navTo('home')">🏠 Menú Principal</a></li>
+      <li><a href="#" onclick="navTo('dashboard')">⚡ Dashboard Resumen (KPIs)</a></li>
       <li><a href="#" onclick="navTo('athletes')">👤 Gestión Atletas</a></li>
       <li><a href="#" onclick="navTo('weight')">⚖️ Registro de Peso</a></li>
       <li><a href="#" onclick="navTo('inbody')">📊 Análisis InBody & AI Vision</a></li>
@@ -315,10 +316,38 @@
     <section id="view-home" class="view-section active">
       <div class="card">
         <h2>Panel de Control - GymRats 👋</h2>
-        <p style="color: var(--text-muted); margin-top: 0.4rem;">Selecciona una opción para comenzar a trabajar:</p>
+        <p style="color: var(--text-muted); margin-top: 0.4rem;">Acceso rápido a tus métricas consolidadas y módulos de entrenamiento:</p>
+      </div>
+
+      <!-- RESUMEN DE KPIS RÁPIDOS EN MENÚ PRINCIPAL -->
+      <div class="card" id="home-kpi-summary-card" style="border: 1px solid #38bdf8; background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%); margin-bottom: 1.2rem; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);">
+        <div class="card-title" style="flex-wrap: wrap; gap: 0.5rem; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 1.3rem;">⚡</span>
+            <div>
+              <span style="color: #38bdf8; font-weight: bold; font-size: 1.05rem;">Resumen de KPIs Recientes</span>
+              <div style="font-size: 0.75rem; color: #94a3b8;">Últimos datos registrados sin navegar módulo por módulo</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <select id="home-user-select" class="form-control" style="width: auto; min-width: 170px; padding: 0.35rem 0.6rem; font-size: 0.85rem;" onchange="handleHomeAthleteChange()"></select>
+            <button class="btn btn-secondary" style="width: auto; padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick="navTo('dashboard')">
+              📊 Vista Completa
+            </button>
+          </div>
+        </div>
+
+        <div id="home-kpis-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.85rem; margin-top: 0.8rem;">
+          <div style="color: var(--text-muted); padding: 1rem; text-align: center;">Cargando resumen de KPIs...</div>
+        </div>
       </div>
 
       <div class="menu-grid">
+        <div class="menu-card" style="border: 1px solid #38bdf8; background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.8));" onclick="navTo('dashboard')">
+          <div class="icon">⚡</div>
+          <h3 style="color: #38bdf8;">Dashboard KPIs</h3>
+          <p>Métricas de peso, InBody y fuerza en un vistazo</p>
+        </div>
         <div class="menu-card" onclick="navTo('athletes')">
           <div class="icon">👤</div>
           <h3>Gestión Atletas</h3>
@@ -358,6 +387,61 @@
           <div class="icon">📈</div>
           <h3>Gráficas Carga</h3>
           <p>Progreso de sobrecarga</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1.5. DASHBOARD EJECUTIVO DE KPIS -->
+    <section id="view-dashboard" class="view-section">
+      <!-- Selector de Atleta & Filtros del Dashboard -->
+      <div class="card" style="border: 1px solid #38bdf8; background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);">
+        <div class="card-title" style="flex-wrap: wrap; gap: 0.5rem; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 1.4rem;">⚡</span>
+            <div>
+              <span style="font-size: 1.15rem; font-weight: bold; color: #38bdf8;">Dashboard Ejecutivo de KPIs</span>
+              <div style="font-size: 0.75rem; color: #94a3b8;">Resumen integral de composición corporal, peso y sobrecarga de fuerza</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary" style="width: auto; padding: 0.35rem 0.8rem; font-size: 0.8rem;" onclick="renderDashboardKPIs()">
+              🔄 Actualizar
+            </button>
+            <button class="btn btn-purple" style="width: auto; padding: 0.35rem 0.8rem; font-size: 0.8rem;" onclick="navTo('home')">
+              🏠 Menú Principal
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0.2rem; margin-top: 0.5rem;">
+          <label style="font-weight: bold; color: var(--accent-blue);">Selecciona el Atleta a Consultar:</label>
+          <select id="dashboard-user-select" class="form-control" onchange="handleDashboardAthleteChange()"></select>
+        </div>
+      </div>
+
+      <!-- Grid Principal de Tarjetas KPI -->
+      <div id="dashboard-kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; margin-bottom: 1.2rem;">
+        <div style="color: var(--text-muted); padding: 2rem; text-align: center;">Cargando tarjetas de resumen de KPIs...</div>
+      </div>
+
+      <!-- Barra de Acceso Rápido a Módulos Directos -->
+      <div class="card">
+        <div class="card-title">
+          <span>🚀 Acciones Rápidas y Registro Directo</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
+          <button class="btn btn-purple" style="padding: 0.65rem 0.8rem; font-size: 0.85rem;" onclick="navTo('inbody')">
+            📸 Escanear InBody con IA
+          </button>
+          <button class="btn btn-primary" style="padding: 0.65rem 0.8rem; font-size: 0.85rem;" onclick="navTo('weight')">
+            ⚖️ Registrar Peso Hoy
+          </button>
+          <button class="btn btn-success" style="padding: 0.65rem 0.8rem; font-size: 0.85rem;" onclick="navTo('leg')">
+            🏋️‍♂️ Registrar Carga de Fuerza
+          </button>
+          <button class="btn btn-warning" style="padding: 0.65rem 0.8rem; font-size: 0.85rem; background:#d97706;" onclick="navTo('suspension')">
+            ⏱️ Cronómetro Suspensión
+          </button>
         </div>
       </div>
     </section>
@@ -1144,6 +1228,7 @@
     let weightLogs = [];
     let currentWorkoutCategory = 'leg';
     let currentSelectedInBodyAthlete = localStorage.getItem('gymrats_last_inbody_athlete') || '';
+    let currentDashboardAthlete = localStorage.getItem('gymrats_last_athlete') || localStorage.getItem('gymrats_last_inbody_athlete') || '';
     let currentDetailLog = null;
 
     const menuToggle = document.getElementById('menu-toggle');
@@ -1176,6 +1261,11 @@
       if (viewKey === 'home') {
         document.getElementById('view-home').classList.add('active');
         appTitleText.textContent = "GymRats";
+        renderDashboardKPIs();
+      } else if (viewKey === 'dashboard') {
+        document.getElementById('view-dashboard').classList.add('active');
+        appTitleText.textContent = "Dashboard KPIs";
+        renderDashboardKPIs();
       } else if (viewKey === 'athletes') {
         document.getElementById('view-athletes').classList.add('active');
         appTitleText.textContent = "Atletas";
@@ -1283,17 +1373,20 @@
     onSnapshot(collection(db, "records"), (snapshot) => {
       records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       updateSuspensionUI();
+      renderDashboardKPIs();
     }, (err) => handleFirestoreError(err, "records"));
 
     onSnapshot(collection(db, "weight_records"), (snapshot) => {
       weightLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       updateWeightUI();
+      renderDashboardKPIs();
     }, (err) => handleFirestoreError(err, "weight_records"));
 
     onSnapshot(collection(db, "workouts"), (snapshot) => {
       workouts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       renderWorkoutTable();
       renderAnalytics();
+      renderDashboardKPIs();
     }, (err) => handleFirestoreError(err, "workouts"));
 
     onSnapshot(collection(db, "inbody"), (snapshot) => {
@@ -1315,6 +1408,7 @@
       }
       updateSelects();
       renderInBodySection();
+      renderDashboardKPIs();
     }, (err) => handleFirestoreError(err, "inbody"));
 
     onSnapshot(collection(db, "inbody_ai_evaluations"), (snapshot) => {
@@ -1333,6 +1427,7 @@
         })
         .sort((a,b) => new Date(a.date) - new Date(b.date));
       renderInBodyAiEvaluationSection(userLogs, currentSelectedInBodyAthlete === 'ALL');
+      renderDashboardKPIs();
     }, (err) => {
       console.warn("[Firebase] inbody_ai_evaluations listener (modo fallback local activo):", err);
       try {
@@ -1354,7 +1449,9 @@
         document.getElementById('analytics-user'),
         document.getElementById('inbody-user-select'),
         document.getElementById('inbody-user-form-select'),
-        document.getElementById('select-user-weight')
+        document.getElementById('select-user-weight'),
+        document.getElementById('dashboard-user-select'),
+        document.getElementById('home-user-select')
       ];
 
       const allAthletes = getAllAthletes();
@@ -1386,8 +1483,17 @@
             sel.value = allAthletes[0];
             currentSelectedInBodyAthlete = allAthletes[0];
           }
+        } else if (idx === 6 || idx === 7) {
+          if (currentDashboardAthlete && allAthletes.includes(currentDashboardAthlete)) {
+            sel.value = currentDashboardAthlete;
+          } else if (allAthletes.length > 0) {
+            sel.value = allAthletes[0];
+            currentDashboardAthlete = allAthletes[0];
+          }
         }
       });
+
+      renderDashboardKPIs();
     }
 
     function populateExerciseSelect() {
@@ -2576,6 +2682,483 @@
         if (loader) loader.style.display = 'none';
         if (contentView) contentView.style.opacity = '1';
       }
+    };
+
+    // ==============================================================
+    // ⚡ DASHBOARD EJECUTIVO DE KPIS Y RESUMEN UNIFICADO
+    // ==============================================================
+
+    window.handleDashboardAthleteChange = function() {
+      const sel = document.getElementById('dashboard-user-select');
+      if (sel) {
+        currentDashboardAthlete = sel.value;
+        localStorage.setItem('gymrats_last_athlete', currentDashboardAthlete);
+        const homeSel = document.getElementById('home-user-select');
+        if (homeSel) homeSel.value = currentDashboardAthlete;
+        renderDashboardKPIs();
+      }
+    };
+
+    window.handleHomeAthleteChange = function() {
+      const sel = document.getElementById('home-user-select');
+      if (sel) {
+        currentDashboardAthlete = sel.value;
+        localStorage.setItem('gymrats_last_athlete', currentDashboardAthlete);
+        const dashSel = document.getElementById('dashboard-user-select');
+        if (dashSel) dashSel.value = currentDashboardAthlete;
+        renderDashboardKPIs();
+      }
+    };
+
+    window.renderDashboardKPIs = function() {
+      const allAthletes = getAllAthletes();
+      if (!currentDashboardAthlete && allAthletes.length > 0) {
+        currentDashboardAthlete = allAthletes[0];
+      }
+
+      const athlete = currentDashboardAthlete;
+      const homeContainer = document.getElementById('home-kpis-container');
+      const dashGrid = document.getElementById('dashboard-kpi-grid');
+
+      // Sincronizar selectores si no tienen el valor correcto
+      const dashSel = document.getElementById('dashboard-user-select');
+      if (dashSel && athlete && dashSel.value !== athlete) dashSel.value = athlete;
+      const homeSel = document.getElementById('home-user-select');
+      if (homeSel && athlete && homeSel.value !== athlete) homeSel.value = athlete;
+
+      if (!athlete) {
+        const noAthleteHtml = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: #94a3b8; background: #0f172a; border-radius: 8px;">
+            <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">👤</div>
+            <div style="font-weight: bold; color: #f8fafc; font-size: 1.05rem; margin-bottom: 0.3rem;">No hay atletas registrados</div>
+            <div style="font-size: 0.88rem; max-width: 420px; margin: 0 auto;">Crea tu primer perfil de atleta para consultar el resumen integral de KPIs en este panel.</div>
+            <button class="btn btn-primary" style="width: auto; margin-top: 1rem; padding: 0.45rem 1.2rem;" onclick="navTo('athletes')">＋ Registrar Atleta</button>
+          </div>
+        `;
+        if (homeContainer) homeContainer.innerHTML = noAthleteHtml;
+        if (dashGrid) dashGrid.innerHTML = noAthleteHtml;
+        return;
+      }
+
+      const formatDateShort = (dStr) => {
+        if (!dStr) return '-';
+        const parts = String(dStr).split('-');
+        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        return dStr;
+      };
+
+      // 1. DATA: INBODY
+      const athleteInBody = inbodyLogs
+        .filter(l => (l.user || '').trim().toLowerCase() === athlete.trim().toLowerCase())
+        .sort((a,b) => new Date(a.date) - new Date(b.date));
+      const latestIB = athleteInBody.length > 0 ? athleteInBody[athleteInBody.length - 1] : null;
+      const prevIB = athleteInBody.length >= 2 ? athleteInBody[athleteInBody.length - 2] : null;
+
+      // 2. DATA: PESO CORPORAL (Combinar weightLogs e inbodyLogs)
+      const weightRecords = [];
+      weightLogs
+        .filter(w => (w.user || '').trim().toLowerCase() === athlete.trim().toLowerCase())
+        .forEach(w => {
+          const val = parseFloat(w.weight || w.peso);
+          if (val > 0) weightRecords.push({ date: w.date, weight: val, source: 'Báscula' });
+        });
+      athleteInBody.forEach(ib => {
+        const val = parseFloat(ib.peso);
+        if (val > 0) weightRecords.push({ date: ib.date, weight: val, source: 'InBody' });
+      });
+      weightRecords.sort((a,b) => new Date(a.date) - new Date(b.date));
+      const latestWRec = weightRecords.length > 0 ? weightRecords[weightRecords.length - 1] : null;
+      const prevWRec = weightRecords.length >= 2 ? weightRecords[weightRecords.length - 2] : null;
+
+      // 3. DATA: ENTRENAMIENTO / RUTINAS DE FUERZA
+      const athleteWorkouts = workouts
+        .filter(w => (w.user || '').trim().toLowerCase() === athlete.trim().toLowerCase())
+        .sort((a,b) => new Date(a.date) - new Date(b.date));
+      const latestWorkout = athleteWorkouts.length > 0 ? athleteWorkouts[athleteWorkouts.length - 1] : null;
+
+      let workoutProgression = null;
+      if (latestWorkout) {
+        const est1RM = latestWorkout.weight && latestWorkout.reps
+          ? (latestWorkout.weight * (1 + (latestWorkout.reps / 30)))
+          : latestWorkout.weight;
+
+        // Buscar sesión anterior del MISMO ejercicio
+        const prevSameEx = athleteWorkouts.slice(0, -1).reverse().find(w => 
+          (w.exercise || '').trim().toLowerCase() === (latestWorkout.exercise || '').trim().toLowerCase()
+        );
+
+        let deltaLoadText = '';
+        let deltaType = 'first';
+        if (prevSameEx) {
+          const prev1RM = prevSameEx.weight && prevSameEx.reps
+            ? (prevSameEx.weight * (1 + (prevSameEx.reps / 30)))
+            : prevSameEx.weight;
+          const diffLoad = (latestWorkout.weight || 0) - (prevSameEx.weight || 0);
+          const diff1RM = est1RM - prev1RM;
+
+          if (diffLoad > 0 || diff1RM > 0.5) {
+            deltaType = 'up';
+            const loadStr = diffLoad !== 0 ? `${diffLoad > 0 ? '+' : ''}${diffLoad} ${latestWorkout.unit || 'lb'}` : '';
+            const rmStr = diff1RM > 0.2 ? `+${diff1RM.toFixed(1)} 1RM` : '';
+            deltaLoadText = `📈 Sobrecarga: ${loadStr} ${rmStr}`.trim();
+          } else if (Math.abs(diffLoad) < 0.1 && Math.abs(diff1RM) < 0.5) {
+            deltaType = 'same';
+            deltaLoadText = `⚖️ Carga consolidada`;
+          } else {
+            deltaType = 'down';
+            deltaLoadText = `📉 ${diffLoad} ${latestWorkout.unit || 'lb'} vs récord`;
+          }
+        }
+
+        const categoryTitleMap = {
+          leg: '🦵 Leg Day (Pierna)',
+          pull: '🏋️‍♂️ Pull Day (Espalda/Bíceps)',
+          push: '🧘‍♂️ Push Day (Pecho/Tríceps)'
+        };
+
+        workoutProgression = {
+          latestWorkout,
+          est1RM: Math.round(est1RM),
+          categoryTitle: categoryTitleMap[latestWorkout.category] || latestWorkout.category || 'Rutina',
+          deltaType,
+          deltaLoadText,
+          prevSameEx
+        };
+      }
+
+      // 4. DATA: SUSPENSIÓN
+      const athleteSuspensions = records
+        .filter(r => (r.user || '').trim().toLowerCase() === athlete.trim().toLowerCase())
+        .sort((a,b) => new Date(a.date) - new Date(b.date));
+      const latestSusp = athleteSuspensions.length > 0 ? athleteSuspensions[athleteSuspensions.length - 1] : null;
+      let maxSuspSeconds = 0;
+      let maxSuspFormatted = '-';
+      athleteSuspensions.forEach(s => {
+        const parts = String(s.time || '').split(':');
+        let sec = 0;
+        if (parts.length === 2) {
+          sec = (parseFloat(parts[0]) || 0) * 60 + (parseFloat(parts[1]) || 0);
+        } else {
+          sec = parseFloat(s.time) || 0;
+        }
+        if (sec > maxSuspSeconds) {
+          maxSuspSeconds = sec;
+          maxSuspFormatted = s.time;
+        }
+      });
+
+      // 5. DATA: EVALUACIÓN DE IA
+      const athleteAiEvals = inbodyAiEvaluations
+        .filter(e => (e.athlete || '').trim().toLowerCase() === athlete.trim().toLowerCase())
+        .sort((a,b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+      const latestAi = athleteAiEvals.length > 0 ? athleteAiEvals[0] : null;
+
+      // ==========================================
+      // CONSTRUCCIÓN VISUAL DE LAS TARJETAS KPI
+      // ==========================================
+
+      // 1. Tarjeta InBody
+      let inbodyCardHtml = '';
+      if (latestIB) {
+        let deltaMmeHtml = '';
+        let deltaGrasaHtml = '';
+        if (prevIB) {
+          const dMme = (latestIB.mme || 0) - (prevIB.mme || 0);
+          const dGrasa = (latestIB.pgc || 0) - (prevIB.pgc || 0);
+          deltaMmeHtml = `<span style="color: ${dMme >= 0 ? '#4ade80' : '#f87171'}; font-weight: bold; font-size: 0.76rem; display: block;">
+            ${dMme > 0 ? '+' : ''}${dMme.toFixed(1)}kg ${dMme >= 0 ? '📈' : '📉'}
+          </span>`;
+          deltaGrasaHtml = `<span style="color: ${dGrasa <= 0 ? '#4ade80' : '#fb923c'}; font-weight: bold; font-size: 0.76rem; display: block;">
+            ${dGrasa > 0 ? '+' : ''}${dGrasa.toFixed(1)}% ${dGrasa <= 0 ? '📉' : '📈'}
+          </span>`;
+        }
+
+        inbodyCardHtml = `
+          <div class="card" style="border: 1px solid #a855f7; background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%); margin-bottom: 0; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <span style="font-size: 1.3rem;">📊</span>
+                <span style="font-weight: bold; color: #c084fc; font-size: 0.95rem;">Puntuación InBody</span>
+              </div>
+              <span style="font-size: 0.75rem; color: #94a3b8; background: #0f172a; padding: 2px 7px; border-radius: 4px; border: 1px solid #334155;">
+                ${formatDateShort(latestIB.date)}
+              </span>
+            </div>
+
+            <div style="display: flex; align-items: baseline; gap: 0.5rem; margin: 0.2rem 0;">
+              <span style="font-size: 2.2rem; font-weight: 800; color: #f8fafc; line-height: 1;">
+                ${latestIB.score || 0}
+              </span>
+              <span style="color: var(--text-muted); font-size: 1rem;">/ 100 pts</span>
+              ${latestIB.score >= 80 
+                ? '<span class="badge" style="background: rgba(74, 222, 128, 0.2); color: #4ade80; border: 1px solid #4ade80; font-size: 0.72rem; padding: 2px 6px; margin-left:auto;">Excelente</span>'
+                : '<span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #38bdf8; font-size: 0.72rem; padding: 2px 6px; margin-left:auto;">Activo</span>'}
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 0.5rem; margin: 0.6rem 0; text-align: center;">
+              <div>
+                <div style="font-size: 0.7rem; color: #94a3b8;">Músculo (MME)</div>
+                <div style="font-weight: bold; font-size: 0.95rem; color: #4ade80;">${latestIB.mme || 0} kg</div>
+                ${deltaMmeHtml}
+              </div>
+              <div>
+                <div style="font-size: 0.7rem; color: #94a3b8;">Grasa (PGC)</div>
+                <div style="font-weight: bold; font-size: 0.95rem; color: #fb923c;">${latestIB.pgc || 0}%</div>
+                ${deltaGrasaHtml}
+              </div>
+              <div>
+                <div style="font-size: 0.7rem; color: #94a3b8;">Visceral</div>
+                <div style="font-weight: bold; font-size: 0.95rem; color: #38bdf8;">Nvl ${latestIB.visceral || '-'}</div>
+                <span style="font-size: 0.7rem; color: #94a3b8;">IMC ${latestIB.imc || '-'}</span>
+              </div>
+            </div>
+
+            <button class="btn btn-secondary" style="width: 100%; font-size: 0.8rem; padding: 0.4rem; margin-top: 0.2rem;" onclick="navTo('inbody')">
+              Ver Análisis InBody y Siluetas ➔
+            </button>
+          </div>
+        `;
+      } else {
+        inbodyCardHtml = `
+          <div class="card" style="border: 1px dashed #a855f7; background: #0f172a; margin-bottom: 0; text-align: center; padding: 1.4rem;">
+            <div style="font-size: 1.8rem; margin-bottom: 0.4rem;">📊</div>
+            <div style="font-weight: bold; color: #c084fc; font-size: 0.95rem; margin-bottom: 0.2rem;">Puntuación InBody</div>
+            <div style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 0.8rem;">Sin evaluaciones InBody para este atleta.</div>
+            <button class="btn btn-purple" style="font-size: 0.82rem; padding: 0.4rem 0.9rem;" onclick="navTo('inbody')">
+              📸 Escanear Reporte con IA
+            </button>
+          </div>
+        `;
+      }
+
+      // 2. Tarjeta Peso
+      let pesoCardHtml = '';
+      if (latestWRec) {
+        let deltaWeightText = '';
+        if (prevWRec) {
+          const dW = (latestWRec.weight - prevWRec.weight);
+          const sign = dW > 0 ? '+' : '';
+          const color = dW < 0 ? '#4ade80' : (dW > 0 ? '#fb923c' : '#38bdf8');
+          const icon = dW < 0 ? '📉' : (dW > 0 ? '📈' : '⚖️');
+          deltaWeightText = `<span style="color: ${color}; font-weight: bold; font-size: 0.82rem;">
+            ${sign}${dW.toFixed(1)} kg vs anterior ${icon}
+          </span>`;
+        }
+
+        const recentTrail = weightRecords.slice(-3).map(r => `
+          <span style="background: #0f172a; border: 1px solid #334155; border-radius: 4px; padding: 2px 6px; font-size: 0.72rem; color: #cbd5e1;">
+            ${formatDateShort(r.date)}: <strong>${r.weight}kg</strong>
+          </span>
+        `).join(' ');
+
+        pesoCardHtml = `
+          <div class="card" style="border: 1px solid #38bdf8; background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%); margin-bottom: 0; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <span style="font-size: 1.3rem;">⚖️</span>
+                <span style="font-weight: bold; color: #38bdf8; font-size: 0.95rem;">Último Peso Registrado</span>
+              </div>
+              <span style="font-size: 0.75rem; color: #94a3b8; background: #0f172a; padding: 2px 7px; border-radius: 4px; border: 1px solid #334155;">
+                ${formatDateShort(latestWRec.date)}
+              </span>
+            </div>
+
+            <div style="display: flex; align-items: baseline; gap: 0.5rem; margin: 0.2rem 0;">
+              <span style="font-size: 2.2rem; font-weight: 800; color: #38bdf8; line-height: 1;">
+                ${latestWRec.weight.toFixed(1)}
+              </span>
+              <span style="color: #cbd5e1; font-size: 1.1rem; font-weight: bold;">kg</span>
+              <span style="font-size: 0.75rem; color: #94a3b8; margin-left: auto;">(${latestWRec.source})</span>
+            </div>
+
+            <div style="margin: 0.4rem 0 0.6rem 0;">
+              ${deltaWeightText || '<span style="color: #94a3b8; font-size: 0.8rem;">Registro de peso inicial</span>'}
+            </div>
+
+            <div style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 0.6rem;">
+              Historial reciente: <div style="display: flex; gap: 0.3rem; margin-top: 0.2rem; flex-wrap: wrap;">${recentTrail}</div>
+            </div>
+
+            <button class="btn btn-secondary" style="width: 100%; font-size: 0.8rem; padding: 0.4rem;" onclick="navTo('weight')">
+              Registrar o Ver Historial de Peso ➔
+            </button>
+          </div>
+        `;
+      } else {
+        pesoCardHtml = `
+          <div class="card" style="border: 1px dashed #38bdf8; background: #0f172a; margin-bottom: 0; text-align: center; padding: 1.4rem;">
+            <div style="font-size: 1.8rem; margin-bottom: 0.4rem;">⚖️</div>
+            <div style="font-weight: bold; color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.2rem;">Control de Peso</div>
+            <div style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 0.8rem;">Sin registros de peso en el historial.</div>
+            <button class="btn btn-primary" style="font-size: 0.82rem; padding: 0.4rem 0.9rem;" onclick="navTo('weight')">
+              ⚖️ Registrar Peso Hoy
+            </button>
+          </div>
+        `;
+      }
+
+      // 3. Tarjeta Rutina de Fuerza
+      let fuerzaCardHtml = '';
+      if (workoutProgression) {
+        const { latestWorkout: w, est1RM, categoryTitle, deltaType, deltaLoadText } = workoutProgression;
+
+        let badgeStyle = 'background: rgba(14, 165, 233, 0.2); color: #38bdf8; border: 1px solid #0284c7;';
+        if (deltaType === 'up') badgeStyle = 'background: rgba(74, 222, 128, 0.2); color: #4ade80; border: 1px solid #4ade80;';
+        if (deltaType === 'down') badgeStyle = 'background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #d97706;';
+
+        fuerzaCardHtml = `
+          <div class="card" style="border: 1px solid #4ade80; background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%); margin-bottom: 0; box-shadow: 0 4px 15px rgba(74, 222, 128, 0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <span style="font-size: 1.3rem;">🏋️‍♂️</span>
+                <div>
+                  <span style="font-weight: bold; color: #4ade80; font-size: 0.95rem;">Última Rutina de Fuerza</span>
+                  <div style="font-size: 0.72rem; color: #94a3b8;">${categoryTitle}</div>
+                </div>
+              </div>
+              <span style="font-size: 0.75rem; color: #94a3b8; background: #0f172a; padding: 2px 7px; border-radius: 4px; border: 1px solid #334155;">
+                ${formatDateShort(w.date)}
+              </span>
+            </div>
+
+            <div style="margin: 0.3rem 0;">
+              <div style="font-size: 1.15rem; font-weight: bold; color: #f8fafc;">${w.exercise}</div>
+              <div style="font-size: 0.88rem; color: #cbd5e1; margin-top: 0.2rem;">
+                Carga: <strong style="color: #4ade80; font-size: 1.15rem;">${w.weight} ${w.unit || 'lb'}</strong> 
+                <span style="color: #94a3b8;">(${w.sets} series × ${w.reps} reps)</span>
+              </div>
+            </div>
+
+            <div style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 0.5rem 0.7rem; margin: 0.5rem 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem;">
+              <div>
+                <span style="font-size: 0.75rem; color: #94a3b8;">Est. 1RM (Epley):</span>
+                <span style="font-size: 1.05rem; font-weight: bold; color: #fb923c; margin-left: 0.4rem;">${est1RM} ${w.unit || 'lb'}</span>
+              </div>
+              <div>
+                <span class="badge" style="${badgeStyle} font-size: 0.75rem; padding: 2px 7px;">
+                  ${deltaLoadText || 'Sobrecarga Activa'}
+                </span>
+              </div>
+            </div>
+
+            <button class="btn btn-secondary" style="width: 100%; font-size: 0.8rem; padding: 0.4rem;" onclick="navTo('${w.category || 'leg'}')">
+              Abrir Rutina y Registrar Cargas ➔
+            </button>
+          </div>
+        `;
+      } else {
+        fuerzaCardHtml = `
+          <div class="card" style="border: 1px dashed #4ade80; background: #0f172a; margin-bottom: 0; text-align: center; padding: 1.4rem;">
+            <div style="font-size: 1.8rem; margin-bottom: 0.4rem;">🏋️‍♂️</div>
+            <div style="font-weight: bold; color: #4ade80; font-size: 0.95rem; margin-bottom: 0.2rem;">Rutinas de Fuerza</div>
+            <div style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 0.8rem;">Sin series ni cargas registradas.</div>
+            <button class="btn btn-success" style="font-size: 0.82rem; padding: 0.4rem 0.9rem;" onclick="navTo('leg')">
+              🏋️‍♂️ Registrar Entrenamiento
+            </button>
+          </div>
+        `;
+      }
+
+      // 4. Tarjeta Diagnóstico IA
+      let aiEvalCardHtml = '';
+      if (latestAi) {
+        aiEvalCardHtml = `
+          <div class="card" style="border: 1px solid #0284c7; background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%); margin-bottom: 0; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <span style="font-size: 1.3rem;">🧠</span>
+                <span style="font-weight: bold; color: #38bdf8; font-size: 0.95rem;">Último Diagnóstico IA</span>
+              </div>
+              <span style="font-size: 0.75rem; color: #94a3b8; background: #0f172a; padding: 2px 7px; border-radius: 4px; border: 1px solid #334155;">
+                ${formatDateShort(latestAi.date || latestAi.createdAt)}
+              </span>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin: 0.3rem 0;">
+              <span class="badge" style="background: rgba(14, 165, 233, 0.2); color: #38bdf8; border: 1px solid #0284c7; font-size: 0.78rem; padding: 3px 8px;">
+                ${latestAi.statusBadge || 'Evaluación Registrada'}
+              </span>
+              <span style="font-weight: bold; color: #fbbf24; font-size: 0.88rem;">
+                ⭐ ${latestAi.progressRating || 9} / 10
+              </span>
+            </div>
+
+            <div style="background: #0f172a; border-left: 3px solid #38bdf8; padding: 0.5rem 0.7rem; border-radius: 4px; font-size: 0.82rem; color: #cbd5e1; font-style: italic; line-height: 1.4; margin: 0.5rem 0;">
+              "${(latestAi.overallVerdict || latestAi.summary || '').substring(0, 110)}..."
+            </div>
+
+            <button class="btn btn-secondary" style="width: 100%; font-size: 0.8rem; padding: 0.4rem; margin-top: 0.2rem;" onclick="navTo('inbody')">
+              Ver Informe Clínico Completo ➔
+            </button>
+          </div>
+        `;
+      } else {
+        aiEvalCardHtml = `
+          <div class="card" style="border: 1px dashed #0284c7; background: #0f172a; margin-bottom: 0; text-align: center; padding: 1.4rem;">
+            <div style="font-size: 1.8rem; margin-bottom: 0.4rem;">🧠</div>
+            <div style="font-weight: bold; color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.2rem;">Evaluación con IA</div>
+            <div style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 0.8rem;">Aún no se ha generado una evaluación clínica para este atleta.</div>
+            <button class="btn btn-purple" style="font-size: 0.82rem; padding: 0.4rem 0.9rem;" onclick="navTo('inbody')">
+              ⚡ Generar con IA
+            </button>
+          </div>
+        `;
+      }
+
+      // 5. Tarjeta Suspensión Dinámica
+      let suspCardHtml = '';
+      if (latestSusp) {
+        suspCardHtml = `
+          <div class="card" style="border: 1px solid #fbbf24; background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%); margin-bottom: 0; box-shadow: 0 4px 15px rgba(251, 191, 36, 0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <span style="font-size: 1.3rem;">⏱️</span>
+                <span style="font-weight: bold; color: #fbbf24; font-size: 0.95rem;">Suspensión Dinámica</span>
+              </div>
+              <span style="font-size: 0.75rem; color: #94a3b8; background: #0f172a; padding: 2px 7px; border-radius: 4px; border: 1px solid #334155;">
+                ${formatDateShort(latestSusp.date)}
+              </span>
+            </div>
+
+            <div style="display: flex; align-items: baseline; gap: 0.5rem; margin: 0.3rem 0;">
+              <span style="font-size: 2.2rem; font-weight: 800; color: #fbbf24; font-family: monospace; line-height: 1;">
+                ${latestSusp.time || '00:00'}
+              </span>
+              <span style="font-size: 0.75rem; color: #94a3b8;">(Última marca)</span>
+            </div>
+
+            <div style="font-size: 0.82rem; color: #cbd5e1; margin: 0.5rem 0;">
+              🏆 Mejor Récord (PR): <strong style="color: #4ade80;">${maxSuspFormatted}</strong>
+            </div>
+
+            <button class="btn btn-secondary" style="width: 100%; font-size: 0.8rem; padding: 0.4rem; margin-top: 0.2rem;" onclick="navTo('suspension')">
+              Ir al Cronómetro de Suspensión ➔
+            </button>
+          </div>
+        `;
+      } else {
+        suspCardHtml = `
+          <div class="card" style="border: 1px dashed #fbbf24; background: #0f172a; margin-bottom: 0; text-align: center; padding: 1.4rem;">
+            <div style="font-size: 1.8rem; margin-bottom: 0.4rem;">⏱️</div>
+            <div style="font-weight: bold; color: #fbbf24; font-size: 0.95rem; margin-bottom: 0.2rem;">Suspensión Dinámica</div>
+            <div style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 0.8rem;">Sin tiempos registrados para este atleta.</div>
+            <button class="btn btn-warning" style="font-size: 0.82rem; padding: 0.4rem 0.9rem; background:#d97706;" onclick="navTo('suspension')">
+              ⏱️ Iniciar Suspensión
+            </button>
+          </div>
+        `;
+      }
+
+      const cardsCombinedHtml = `
+        ${inbodyCardHtml}
+        ${pesoCardHtml}
+        ${fuerzaCardHtml}
+        ${aiEvalCardHtml}
+        ${suspCardHtml}
+      `;
+
+      if (homeContainer) homeContainer.innerHTML = cardsCombinedHtml;
+      if (dashGrid) dashGrid.innerHTML = cardsCombinedHtml;
     };
 
     // Función auxiliar para actualizar los indicadores semáforo (Bajo, Normal, Alto)
